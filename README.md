@@ -2,6 +2,6 @@
 GDP Project
 
 ## Wiki Editors History
-* Wyatt:  
+* Wyatt: Created the charter, problem statement, and client meeting minutes pages as well as their respective links on the wiki home page. 
 * Owen: 
 * Corey: Started Home page, finalized format to be used for wiki pages.
