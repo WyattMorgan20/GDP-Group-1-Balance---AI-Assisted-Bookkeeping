@@ -2,6 +2,6 @@
 GDP Project
 
 ## Wiki Editors History
-* Wyatt: Created the charter, problem statement, and client meeting minutes pages as well as their respective links on the wiki home page. 
-* Owen: Created and finalized About Developers page.
+* Wyatt: Worked on the charter iteration 1 document and helped set up the charter wiki page.
+* Owen: Worked on the charter iteration 1 document and helped set up the charter wiki page.
 * Corey: Started Home page, finalized format to be used for wiki pages. Added Developer info to the About wiki page. Added first version of the Charter Draft.
