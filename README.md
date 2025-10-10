@@ -2,7 +2,7 @@
 GDP Project
 
 ## Wiki Editors History
-* Wyatt: Meeting with Dr. Voss, took and reformatted meeting minutes to apply to wiki
+* Wyatt: Revised our Non-Functional Requirements (Iteration 2) wiki and document. I also worked on the Data Management Plan (Iteration 1) wiki.
 * Owen: Added in new information and notes taken during today's (10-8) client meeting
 * Corey: Added sections to the meeting 3 wiki page.
   * History: Started Home page, finalized format to be used for wiki pages. Added Developer info to the About wiki page. Added first version of the Charter Draft. Added preliminary project research for bookkeeping. Added preliminary project research for the month-end process. Added Functional Requirements wiki page with proper formatting. Added first two use cases about account creation and user login. Added Manager permissions use case and diagram to the wiki. Modified use case wiki page to have proper format for accountant and IT permissions sections, added both diagram files for the sections to project. Added talking points to the agenda section of the meeting 2 wiki. Added and/or updated functional requirements to include info received form meeting 2. Fleshed out ambiguous functional requirements into separate requirements. Finalized iteration 1 of the non-functional requirements wiki. Finish use case 8 and reformat use cases 6 and 7 of iteration 2 of the use cases wiki. Added diagram files to project to complete Use Cases 2, then inserted the diagrams for cases 6 and 7. Added meeting 3 page, linked it to the home page, and put some items on the agenda list.
