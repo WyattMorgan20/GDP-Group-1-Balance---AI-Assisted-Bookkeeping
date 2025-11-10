@@ -6,9 +6,10 @@ export default function Home() {
         Hello World!
       </h1>
       <p className="text-lg text-gray-600">
-        This is what the main page will look like. Probably the login page maybe?<br />
+        This is what the main page will look like. Probably the login page maybe?<br/>
 
-        I (Wyatt) got this all setup on my home pc AND laptop, but I don't want to touch this page until we have a conversation on where we want to go with it
+        I (Wyatt) got this all setup on my home pc AND laptop,<br/>
+        but I do not want to touch this page until we have a conversation on where we want to go with it<br/>
       </p>
     </main>
   );
