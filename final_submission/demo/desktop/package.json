@@ -1,11 +1,11 @@
 {
-  "name": "website",
+  "name": "desktop",
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev -p 3000",
+    "dev": "next dev -p 3001",
     "build": "next build",
-    "start": "next start -p 3000",
+    "start": "next start -p 3001",
     "lint": "eslint"
   },
   "dependencies": {
@@ -14,16 +14,13 @@
     "react-dom": "19.2.3"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4.1.18",
+    "@tailwindcss/postcss": "^4",
     "@types/node": "^25",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "eslint": "^9.39.2",
+    "eslint": "^9",
     "eslint-config-next": "16.1.1",
-    "tailwindcss": "^4.1.18",
+    "tailwindcss": "^4",
     "typescript": "^5"
-  },
-  "overrides": {
-    "baseline-browser-mapping": "latest"
   }
 }
