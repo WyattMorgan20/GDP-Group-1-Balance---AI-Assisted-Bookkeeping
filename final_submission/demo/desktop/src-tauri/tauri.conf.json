@@ -12,9 +12,16 @@
   "app": {
     "windows": [
       {
-        "title": "desktop",
+        "title": "Balanced: AI-Assisted Bookkeeping",
         "width": 800,
-        "height": 600
+        "height": 600,
+        "minWidth": 400,
+        "minHeight": 300,
+        "decorations": true,
+        "transparent": false,
+        "resizable": true,
+        "fullscreen": false,
+        "maximized": false
       }
     ],
     "security": {
