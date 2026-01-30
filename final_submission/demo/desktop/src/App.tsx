@@ -1,50 +1,86 @@
-import { useState } from "react";
-import reactLogo from "./assets/react.svg";
-import { invoke } from "@tauri-apps/api/core";
-import "./App.css";
+import { useState } from 'react';
+import Login from './Login';
+import Signup from './Signup';
+import RoleSelection from './RoleSelection';
+import ActivationCode from './AccountActivation';
+
+interface User {
+  id: number;
+  email: string;
+  role: string | null;
+  activated: boolean;
+  first_login: boolean;
+}
+
+type AppState = 'login' | 'signup' | 'role-selection' | 'activation';
 
 function App() {
-  const [greetMsg, setGreetMsg] = useState("");
-  const [name, setName] = useState("");
+  const [appState, setAppState] = useState<AppState>('login');
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [selectedRole, setSelectedRole] = useState<string | null>(null);
 
-  async function greet() {
-    // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-    setGreetMsg(await invoke("greet", { name }));
-  }
+  const handleLoginSuccess = (user: User) => {
+    if (!currentUser) {
+      setCurrentUser(user);
+    }
+    
+    if (user.first_login) {
+      // First login - show role selection
+      setAppState('role-selection');
+    } else {
+      // Regular login - go to dashboard
+      alert(`Welcome back! Going to dashboard...`);
+      // TODO: Navigate to dashboard
+    }
+  };
+
+  const handleRoleSelected = (role: string) => {
+    setSelectedRole(role);
+    setAppState('activation');
+  };
+
+  const handleActivationComplete = () => {
+    alert('Account activated! Welcome to Balance!');
+    // TODO: Navigate to dashboard
+  };
+
+  const handleBackToRoleSelection = () => {
+    setAppState('role-selection');
+  };
+
+  const handleSwitchToSignup = () => {
+    setAppState('signup');
+  };
+
+  const handleSwitchToLogin = () => {
+    setAppState('login');
+  };
 
   return (
-    <main className="container">
-      <h1>Welcome to Tauri + React</h1>
-
-      <div className="row">
-        <a href="https://vite.dev" target="_blank">
-          <img src="/vite.svg" className="logo vite" alt="Vite logo" />
-        </a>
-        <a href="https://tauri.app" target="_blank">
-          <img src="/tauri.svg" className="logo tauri" alt="Tauri logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <p>Click on the Tauri, Vite, and React logos to learn more.</p>
-
-      <form
-        className="row"
-        onSubmit={(e) => {
-          e.preventDefault();
-          greet();
-        }}
-      >
-        <input
-          id="greet-input"
-          onChange={(e) => setName(e.currentTarget.value)}
-          placeholder="Enter a name..."
+    <>
+      {appState === 'login' && (
+        <Login 
+          onSwitchToSignup={handleSwitchToSignup}
+          onLoginSuccess={handleLoginSuccess}
         />
-        <button type="submit">Greet</button>
-      </form>
-      <p>{greetMsg}</p>
-    </main>
+      )}
+
+      {appState === 'signup' && (
+        <Signup onSwitchToLogin={handleSwitchToLogin} />
+      )}
+
+      {appState === 'role-selection' && (
+        <RoleSelection onRoleSelected={handleRoleSelected} />
+      )}
+
+      {appState === 'activation' && selectedRole && (
+        <ActivationCode
+          role={selectedRole}
+          onActivationComplete={handleActivationComplete}
+          onBack={handleBackToRoleSelection}
+        />
+      )}
+    </>
   );
 }
 

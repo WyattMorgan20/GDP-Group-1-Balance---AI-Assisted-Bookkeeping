@@ -8,7 +8,11 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
             commands::greet::greet,
-            commands::auth::authenticate_user
+            commands::auth::sign_up,
+            commands::auth::choose_role,
+            commands::auth::activate_account,
+            commands::auth::login,
+            commands::dev::dev_login
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application")
