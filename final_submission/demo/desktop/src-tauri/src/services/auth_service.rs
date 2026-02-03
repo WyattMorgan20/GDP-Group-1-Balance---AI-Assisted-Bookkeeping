@@ -54,10 +54,11 @@ pub fn activate_account(req: &ActivationRequest) -> Result<String, String> {
     let mut user = User {
         id: 1,
         email: "user@example.com".into(),
+        first_login: false,
         role_selected: true,
         account_activated: false,
         organization_type: Some(OrganizationType::Business),
-        membership_role: Some(MembershipRole::Owner),
+        membership_role: Some(MembershipRole::Owner)
     };
 
     // Ensure correct state
@@ -128,15 +129,20 @@ pub fn login(req: &LoginRequest) -> Result<User, String> {
     // - Verify password hash
     // - Ensure account_activated == true
 
-    // Mock user for now
-    Ok(User {
-        id: 1,
-        email: req.email.clone(),
-        role_selected: true,
-        account_activated: true,
-        organization_type: Some(OrganizationType::Business),
-        membership_role: Some(MembershipRole::Owner),
-    })
+    // Test account for now
+    if req.email == "test@balancd.dev" {
+        return Ok(User {
+            id: 1,
+            email: req.email.clone(),
+            first_login: true,
+            role_selected: false,
+            account_activated: false,
+            organization_type: None,
+            membership_role: None
+        });
+    }
+
+    Err("Incorrect email or password".into())
 }
 
 /*pub fn needs_onboarding(user: &User) -> bool {

@@ -12,7 +12,7 @@ interface User {
   first_login: boolean;
 }
 
-type AppState = 'login' | 'signup' | 'role-selection' | 'activation';
+type AppState = 'login' | 'sign-up' | 'role-selection' | 'activation';
 
 function App() {
   const [appState, setAppState] = useState<AppState>('login');
@@ -49,7 +49,7 @@ function App() {
   };
 
   const handleSwitchToSignup = () => {
-    setAppState('signup');
+    setAppState('sign-up');
   };
 
   const handleSwitchToLogin = () => {
@@ -65,7 +65,7 @@ function App() {
         />
       )}
 
-      {appState === 'signup' && (
+      {appState === 'sign-up' && (
         <Signup onSwitchToLogin={handleSwitchToLogin} />
       )}
 

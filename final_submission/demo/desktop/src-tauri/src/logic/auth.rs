@@ -16,6 +16,7 @@ pub enum MembershipRole {
 pub struct User {
     pub id: i32,
     pub email: String,
+    pub first_login: bool,
     pub role_selected: bool,
     pub account_activated: bool,
     pub organization_type: Option<OrganizationType>,

@@ -27,14 +27,17 @@ export default function Login({ onSwitchToSignup, onLoginSuccess }: LoginProps) 
     setIsLoading(true);
 
     try {
-      const user = await invoke<User>('authenticate_user', {
-        email,
-        password,
+      const user = await invoke<User>('login', {
+        req: {
+          email,
+          password
+        }
       });
 
       onLoginSuccess(user);
-    } catch {
-      setError('Incorrect email or password');
+    } catch (err) {
+      //setError('Incorrect email or password');
+      setError(String(err));
     } finally {
       setIsLoading(false);
     }
