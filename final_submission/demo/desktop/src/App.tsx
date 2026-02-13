@@ -3,44 +3,44 @@ import Login from './Login';
 import Signup from './Signup';
 import RoleSelection from './RoleSelection';
 import ActivationCode from './AccountActivation';
-
-interface User {
-  id: number;
-  email: string;
-  role: string | null;
-  activated: boolean;
-  first_login: boolean;
-}
+import { User, OrganizationType, MembershipRole } from './types';
 
 type AppState = 'login' | 'sign-up' | 'role-selection' | 'activation';
 
 function App() {
   const [appState, setAppState] = useState<AppState>('login');
   const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [selectedRole, setSelectedRole] = useState<string | null>(null);
 
   const handleLoginSuccess = (user: User) => {
-    if (!currentUser) {
-      setCurrentUser(user);
-    }
+    setCurrentUser(user);
     
-    if (user.first_login) {
+    if (user.first_login && !user.role_selected) {
       // First login - show role selection
       setAppState('role-selection');
+    } else if (user.role_selected && !user.account_activated) {
+      // Role selected but not activated
+      setAppState('activation');
     } else {
-      // Regular login - go to dashboard
-      alert(`Welcome back! Going to dashboard...`);
+      // Fully onboarded - go to dashboard
+      alert('Welcome back! Going to dashboard...');
       // TODO: Navigate to dashboard
     }
   };
 
-  const handleRoleSelected = (role: string) => {
-    setSelectedRole(role);
+  const handleRoleSelected = (organizationType: OrganizationType, membershipRole: MembershipRole) => {
+    if (currentUser) {
+      setCurrentUser({
+        ...currentUser,
+        organization_type: organizationType,
+        membership_role: membershipRole,
+        role_selected: true,
+      });
+    }
     setAppState('activation');
   };
 
   const handleActivationComplete = () => {
-    alert('Account activated! Welcome to Balance!');
+    alert('Account activated! Welcome to Balancd!');
     // TODO: Navigate to dashboard
   };
 
@@ -73,9 +73,10 @@ function App() {
         <RoleSelection onRoleSelected={handleRoleSelected} />
       )}
 
-      {appState === 'activation' && selectedRole && (
+      {appState === 'activation' && currentUser && (
         <ActivationCode
-          role={selectedRole}
+          organizationType={currentUser.organization_type || 'Business'}
+          membershipRole={currentUser.membership_role || 'Owner'}
           onActivationComplete={handleActivationComplete}
           onBack={handleBackToRoleSelection}
         />

@@ -1,5 +1,7 @@
 import { useState } from 'react';
-import { invoke } from '@tauri-apps/api/core';
+import api from './services/api';
+import { SignUpRequest } from './types';
+import { Button, Input, FormGroup, ErrorMessage, PageContainer } from './components/ui';
 import './Signup.css';
 
 interface SignupProps {
@@ -14,7 +16,6 @@ export default function Signup({ onSwitchToLogin }: SignupProps) {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  // Email validation
   const isValidEmail = (email: string) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
@@ -48,16 +49,13 @@ export default function Signup({ onSwitchToLogin }: SignupProps) {
     setIsLoading(true);
 
     try {
-      // Call Rust backend to create account
-      await invoke('create_account', {
-        email,
-        password,
-      });
-
-      alert('Account created successfully! Please check your email for verification.');
-      // TODO: Navigate to email verification or login page
+      const request: SignUpRequest = { email, password };
+      const message = await api.auth.signUp(request);
+      
+      alert(message);
+      onSwitchToLogin();
     } catch (err) {
-      setError(err as string);
+      setError(String(err));
     } finally {
       setIsLoading(false);
     }
@@ -67,119 +65,79 @@ export default function Signup({ onSwitchToLogin }: SignupProps) {
   const passwordsMatch = password === confirmPassword && password !== '';
 
   return (
-    <div className="signup-container">
-      <div className="signup-box">
-        <div className="signup-header">
-          <h1>Create Account</h1>
-          <p>Join Balancd - AI-Assisted Bookkeeping</p>
-        </div>
-
-        <form onSubmit={handleSignup} noValidate>
-          {error && (
-            <div className="error-message">
-              {error}
-            </div>
-          )}
-
-          {/* Email */}
-          <div className="form-group">
-            <label htmlFor="email">
-              Email Address <span className="required">*</span>
-            </label>
-            <input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="workemail@example.com"
-              required
-              disabled={isLoading}
-              className={email && !isValidEmail(email) ? 'invalid' : ''}
-            />
-            {email && !isValidEmail(email) && (
-              <span className="field-error">Invalid email format</span>
-            )}
-          </div>
-
-          {/* Confirm Email */}
-          <div className="form-group">
-            <label htmlFor="confirmEmail">
-              Confirm Email Address <span className="required">*</span>
-            </label>
-            <input
-              id="confirmEmail"
-              type="email"
-              value={confirmEmail}
-              onChange={(e) => setConfirmEmail(e.target.value)}
-              placeholder="Confirm email"
-              required
-              disabled={isLoading}
-              className={confirmEmail && !emailsMatch ? 'invalid' : emailsMatch ? 'valid' : ''}
-            />
-            {confirmEmail && !emailsMatch && (
-              <span className="field-error">Emails do not match</span>
-            )}
-            {emailsMatch && (
-              <span className="field-success">Emails match</span>
-            )}
-          </div>
-
-          {/* Password */}
-          <div className="form-group">
-            <label htmlFor="password">
-              Password <span className="required">*</span>
-            </label>
-            <input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Enter password"
-              required
-              disabled={isLoading}
-              className={password && password.length < 8 ? 'invalid' : ''}
-            />
-            {password && password.length < 8 && (
-              <span className="field-error">Password must be at least 8 characters</span>
-            )}
-          </div>
-
-          {/* Confirm Password */}
-          <div className="form-group">
-            <label htmlFor="confirmPassword">
-              Confirm Password <span className="required">*</span>
-            </label>
-            <input
-              id="confirmPassword"
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              placeholder="Confirm password"
-              required
-              disabled={isLoading}
-              className={confirmPassword && !passwordsMatch ? 'invalid' : passwordsMatch ? 'valid' : ''}
-            />
-            {confirmPassword && !passwordsMatch && (
-              <span className="field-error">Passwords do not match</span>
-            )}
-            {passwordsMatch && (
-              <span className="field-success">Passwords match</span>
-            )}
-          </div>
-
-          <button type="submit" disabled={isLoading}>
-            {isLoading ? 'Creating Account...' : 'Create Account'}
-          </button>
-
-          <div className="signup-footer">
-            <p>Already have an account? <a href="#" onClick={(e) => {
-                e.preventDefault();
-                onSwitchToLogin();
-              }}>Log in</a>
-            </p>
-          </div>
-        </form>
+    <PageContainer maxWidth="small">
+      <div className="signup-header">
+        <h1>Create Account</h1>
+        <p>Join Balancd - AI-Assisted Bookkeeping</p>
       </div>
-    </div>
+
+      <form onSubmit={handleSignup} noValidate>
+        <ErrorMessage message={error} onDismiss={() => setError('')} />
+
+        <FormGroup label="Email Address" htmlFor="email" required>
+          <Input
+            id="email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="workemail@example.com"
+            required
+            disabled={isLoading}
+            className={email && !isValidEmail(email) ? 'invalid' : ''}
+          />
+        </FormGroup>
+
+        <FormGroup label="Confirm Email Address" htmlFor="confitmEmail" required>
+          <Input
+            id="confirmEmail"
+            type="email"
+            value={confirmEmail}
+            onChange={(e) => setConfirmEmail(e.target.value)}
+            placeholder="Confirm email"
+            required
+            disabled={isLoading}
+            className={confirmEmail && !emailsMatch ? 'invalid' : emailsMatch ? 'valid' : ''}
+          />
+        </FormGroup>
+
+        <FormGroup label="Password" htmlFor="password" required>
+          <Input
+            id="password"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="Enter password"
+            required
+            disabled={isLoading}
+            className={password && password.length < 8 ? 'invalid' : ''}
+          />
+        </FormGroup>
+
+        <FormGroup label="Confirm Password" htmlFor="confirmPassword" required>
+          <Input
+            id="confirmPassword"
+            type="password"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            placeholder="Confirm password"
+            required
+            disabled={isLoading}
+            className={confirmPassword && !passwordsMatch ? 'invalid' : passwordsMatch ? 'valid' : ''}
+          />
+        </FormGroup>
+
+        <Button type="submit" variant="primary" fullWidth isLoading={isLoading}>
+          Create Account
+        </Button>
+
+        <div className="signup-footer">
+          <p>Already have an account? <a href="#" onClick={(e) => {
+              e.preventDefault();
+              onSwitchToLogin();
+            }}>Log in</a>
+          </p>
+        </div>
+      </form>
+    </PageContainer>
   );
 }

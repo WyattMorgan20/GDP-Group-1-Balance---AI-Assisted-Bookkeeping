@@ -1,0 +1,29 @@
+.page-container {
+  width: 100vw;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: var(--gradient-primary);
+  padding: 40px 20px;
+}
+
+.page-content {
+  background: white;
+  border-radius: 12px;
+  box-shadow: var(--shadow-lg);
+  padding: 48px;
+  width: 100%;
+}
+
+.page-content-small {
+  max-width: 420px;
+}
+
+.page-content-medium {
+  max-width: 520px;
+}
+
+.page-content-large {
+  max-width: 900px;
+}

@@ -1,0 +1,16 @@
+.form-group {
+  margin-bottom: 24px;
+}
+
+.form-group label {
+  display: block;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+
+.form-required {
+  color: var(--color-error);
+  margin-left: 4px;
+}

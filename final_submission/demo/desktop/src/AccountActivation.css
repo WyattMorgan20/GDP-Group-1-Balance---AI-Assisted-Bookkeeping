@@ -1,9 +1,38 @@
-.activation-modal {
+.activation-container {
+  width: 100vw;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);
+  padding: 40px 20px;
+}
+
+.activation-box {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  padding: 48px;
+  width: 100%;
   max-width: 520px;
 }
 
-.modal-body {
-  padding: 32px;
+.activation-header {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.activation-header h1 {
+  font-size: 36px;
+  font-weight: bold;
+  color: #0f172a;
+  margin: 0 0 8px 0;
+}
+
+.activation-header p {
+  color: #64748b;
+  margin: 0;
+  font-size: 14px;
 }
 
 .form-group {
@@ -73,7 +102,7 @@
   border-radius: 12px;
   padding: 24px;
   text-align: center;
-  margin-top: 24px;
+  margin-bottom: 24px;
 }
 
 .notice-icon {
@@ -118,6 +147,7 @@
 .button-group {
   display: flex;
   gap: 12px;
+  margin-bottom: 24px;
 }
 
 .back-button {
@@ -166,7 +196,7 @@
 }
 
 .help-section {
-  padding: 24px 32px 32px;
+  padding-top: 24px;
   border-top: 1px solid #e2e8f0;
   text-align: center;
 }

@@ -1,14 +1,9 @@
 import { useState } from 'react';
-import { invoke } from '@tauri-apps/api/core';
+import api from './services/api';
+import { User, LoginRequest } from './types';
+import { Button, Input, FormGroup, ErrorMessage, PageContainer } from './components/ui';
+import './styles/variables.css';
 import './Login.css';
-
-interface User {
-  id: number;
-  email: string;
-  role: string | null;
-  activated: boolean;
-  first_login: boolean;
-}
 
 interface LoginProps {
   onSwitchToSignup: () => void;
@@ -18,7 +13,7 @@ interface LoginProps {
 export default function Login({ onSwitchToSignup, onLoginSuccess }: LoginProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('')
+  const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   const handleLogin = async (e: React.SyntheticEvent) => {
@@ -27,16 +22,10 @@ export default function Login({ onSwitchToSignup, onLoginSuccess }: LoginProps) 
     setIsLoading(true);
 
     try {
-      const user = await invoke<User>('login', {
-        req: {
-          email,
-          password
-        }
-      });
-
+      const request: LoginRequest = { email, password };
+      const user = await api.auth.login(request);
       onLoginSuccess(user);
     } catch (err) {
-      //setError('Incorrect email or password');
       setError(String(err));
     } finally {
       setIsLoading(false);
@@ -44,66 +33,54 @@ export default function Login({ onSwitchToSignup, onLoginSuccess }: LoginProps) 
   };
 
   return (
-    <div className="login-container">
-      <div className="login-box">
-        <div className="login-header">
-          <h1>Balancd</h1>
-          <p>AI-Assisted Bookkeeping</p>
-        </div>
-
-        <form onSubmit={handleLogin} noValidate>
-          {error && (
-            <div className="error-message">
-              {error}
-            </div>
-          )}
-
-          <div className="form-group">
-            <label htmlFor="email">Email Address</label>
-            <input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Enter email"
-              required
-              disabled={isLoading}
-            />
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="password">Password</label>
-            <input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Enter password"
-              required
-              disabled={isLoading}
-            />
-          </div>
-
-          <button type="submit" disabled={isLoading}>
-            {isLoading ? 'Logging in...' : 'Login'}
-          </button>
-
-          <div className="login-footer">
-            <a href="#forgot">Forgot password?</a>
-          </div>
-        </form>
-
-        <div className="signup-prompt">
-          <p>Don't have an account?</p>
-          <button 
-            className="signup-link-button" 
-            onClick={onSwitchToSignup}
-            disabled={isLoading}
-          >
-            Create Account
-          </button>
-        </div>
+    <PageContainer maxWidth="small">
+      <div className="login-header">
+        <h1>Balancd</h1>
+        <p>AI-Assisted Bookkeeping</p>
       </div>
-    </div>
+
+      <form onSubmit={handleLogin} noValidate>
+        <ErrorMessage message={error} onDismiss={() => setError('')} />
+
+        <FormGroup label="Email Address" htmlFor="email" required>
+          <Input
+            id="email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="Enter email"
+            required
+            disabled={isLoading}
+          />
+        </FormGroup>
+
+        <FormGroup label="Password" htmlFor="password" required>
+          <Input
+            id="password"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="Enter password"
+            required
+            disabled={isLoading}
+          />
+        </FormGroup>
+
+        <Button type="submit" variant="primary" fullWidth isLoading={isLoading}>
+          Login
+        </Button>
+
+        <div className="login-footer">
+          <a href="#forgot">Forgot password?</a>
+        </div>
+      </form>
+
+      <div className="signup-prompt">
+        <p>Don't have an account?</p>
+        <Button variant="link" onClick={onSwitchToSignup} disabled={isLoading}>
+          Create Account
+        </Button>
+      </div>
+    </PageContainer>
   );
 }
