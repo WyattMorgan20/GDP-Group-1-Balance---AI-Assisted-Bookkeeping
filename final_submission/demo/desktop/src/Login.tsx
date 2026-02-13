@@ -33,7 +33,7 @@ export default function Login({ onSwitchToSignup, onLoginSuccess }: LoginProps) 
   };
 
   return (
-    <PageContainer maxWidth="small">
+    <PageContainer maxWidth="medium">
       <div className="login-header">
         <h1>Balancd</h1>
         <p>AI-Assisted Bookkeeping</p>

@@ -1,22 +1,3 @@
-.role-selection-container {
-  width: 100vw;
-  min-height: 100vh;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);
-  padding: 40px 20px;
-}
-
-.role-selection-box {
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-  padding: 48px;
-  width: 100%;
-  max-width: 900px;
-}
-
 .role-selection-header {
   text-align: center;
   margin-bottom: 40px;
@@ -32,16 +13,6 @@
 .role-selection-header p {
   color: #64748b;
   margin: 0;
-  font-size: 14px;
-}
-
-.error-message {
-  background: #fee2e2;
-  border: 1px solid #ef4444;
-  color: #dc2626;
-  padding: 12px 16px;
-  border-radius: 8px;
-  margin-bottom: 24px;
   font-size: 14px;
 }
 

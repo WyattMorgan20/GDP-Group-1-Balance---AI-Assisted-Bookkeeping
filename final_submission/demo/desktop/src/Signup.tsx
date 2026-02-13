@@ -2,6 +2,7 @@ import { useState } from 'react';
 import api from './services/api';
 import { SignUpRequest } from './types';
 import { Button, Input, FormGroup, ErrorMessage, PageContainer } from './components/ui';
+import './styles/variables.css';
 import './Signup.css';
 
 interface SignupProps {
@@ -65,7 +66,7 @@ export default function Signup({ onSwitchToLogin }: SignupProps) {
   const passwordsMatch = password === confirmPassword && password !== '';
 
   return (
-    <PageContainer maxWidth="small">
+    <PageContainer maxWidth="medium">
       <div className="signup-header">
         <h1>Create Account</h1>
         <p>Join Balancd - AI-Assisted Bookkeeping</p>
