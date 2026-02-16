@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import Login from './Login';
 import Signup from './Signup';
+import Dashbaord from './Dashboard';
 import RoleSelection from './RoleSelection';
 import ActivationCode from './AccountActivation';
 import { User, OrganizationType, MembershipRole } from './types';
 import { Alert, useAlert } from './components/ui';
 
-type AppState = 'login' | 'sign-up' | 'role-selection' | 'activation';
+type AppState = 'login' | 'sign-up' | 'role-selection' | 'activation' | 'dashboard';
 
 function App() {
   const [appState, setAppState] = useState<AppState>('login');
@@ -26,11 +27,15 @@ function App() {
       // Fully onboarded - go to dashboard
       success('Welcome back! Going to dashboard...');
       setTimeout(() => {
-        // TODO: Navigate to dashboard
-        //setAppState('dashboard');
-      }, 1500);
+        setAppState('dashboard');
+      }, 1000);
     }
   };
+
+  const handleLogout = () => {
+    setCurrentUser(null);
+    setAppState('login');
+  }
 
   const handleRoleSelected = (organizationType: OrganizationType, membershipRole: MembershipRole) => {
     if (currentUser) {
@@ -45,8 +50,7 @@ function App() {
   };
 
   const handleActivationComplete = () => {
-    alert('Account activated! Welcome to Balancd!');
-    // TODO: Navigate to dashboard
+    setAppState('dashboard');
   };
 
   const handleBackToRoleSelection = () => {
@@ -84,6 +88,13 @@ function App() {
           membershipRole={currentUser.membership_role || 'Owner'}
           onActivationComplete={handleActivationComplete}
           onBack={handleBackToRoleSelection}
+        />
+      )}
+
+      {appState === 'dashboard' && currentUser && (
+        <Dashbaord
+          user={currentUser}
+          onLogout={handleLogout}
         />
       )}
 

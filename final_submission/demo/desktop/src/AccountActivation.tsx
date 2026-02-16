@@ -5,6 +5,7 @@ import { Button, Input, FormGroup, ErrorMessage, PageContainer } from './compone
 import './styles/variables.css';
 import './AccountActivation.css';
 import { Alert, useAlert } from './components/ui';
+import { config } from './config';
 
 interface AccountActivationProps {
   organizationType: OrganizationType;
@@ -27,6 +28,15 @@ export default function AccountActivation({
 
   const needsOrganizationCode = membershipRole === 'Employee';
   const needsPayment = membershipRole === 'Owner';
+
+  const handleDevBypass = () => {
+    if (config.isDevelopment) {
+      success('Account activated! Welcome to Balancd!', 'Welcome!');
+      setTimeout(() => {
+        onActivationComplete();
+      }, 1500);
+    }
+  };
 
   const handleSubmit = async (e: React.SyntheticEvent) => {
     e.preventDefault();
@@ -68,6 +78,17 @@ export default function AccountActivation({
         <h1>Activate Your Account</h1>
         <p>Enter the activation code sent to your email</p>
       </div>
+
+      {/* DEV BYPASS BANNER */}
+      {config.isDevelopment && (
+        <div className="dev-bypass-banner">
+          <span className="dev-badge">DEV MODE</span>
+          <p>Skip activation for testing</p>
+          <Button type="button" className="dev-bypass-button" onClick={handleDevBypass}>
+            Skip to Dashboard
+          </Button>
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} noValidate>
         <ErrorMessage message={error} onDismiss={() => setError('')} />
