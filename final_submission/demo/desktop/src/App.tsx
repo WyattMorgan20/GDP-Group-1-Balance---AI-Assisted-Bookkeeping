@@ -4,12 +4,14 @@ import Signup from './Signup';
 import RoleSelection from './RoleSelection';
 import ActivationCode from './AccountActivation';
 import { User, OrganizationType, MembershipRole } from './types';
+import { Alert, useAlert } from './components/ui';
 
 type AppState = 'login' | 'sign-up' | 'role-selection' | 'activation';
 
 function App() {
   const [appState, setAppState] = useState<AppState>('login');
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const { alertState, hideAlert, success } = useAlert();
 
   const handleLoginSuccess = (user: User) => {
     setCurrentUser(user);
@@ -22,8 +24,11 @@ function App() {
       setAppState('activation');
     } else {
       // Fully onboarded - go to dashboard
-      alert('Welcome back! Going to dashboard...');
-      // TODO: Navigate to dashboard
+      success('Welcome back! Going to dashboard...');
+      setTimeout(() => {
+        // TODO: Navigate to dashboard
+        //setAppState('dashboard');
+      }, 1500);
     }
   };
 
@@ -81,6 +86,15 @@ function App() {
           onBack={handleBackToRoleSelection}
         />
       )}
+
+      <Alert
+        isOpen={alertState.isOpen}
+        onClose={hideAlert}
+        message={alertState.message}
+        title={alertState.title}
+        type={alertState.type}
+        confirmText={alertState.confirmText}
+      />
     </>
   );
 }

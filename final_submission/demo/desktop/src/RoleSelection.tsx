@@ -94,9 +94,6 @@ export default function RoleSelection({ onRoleSelected }: RoleSelectionProps) {
             >
               <h3>{role.title}</h3>
               <p>{role.description}</p>
-              {isSelected && (
-                <div className="selected-indicator">✓</div>
-              )}
             </div>
           );
         })}

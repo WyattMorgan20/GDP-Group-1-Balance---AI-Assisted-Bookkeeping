@@ -4,24 +4,26 @@ import { ActivationRequest, MembershipRole, OrganizationType } from './types';
 import { Button, Input, FormGroup, ErrorMessage, PageContainer } from './components/ui';
 import './styles/variables.css';
 import './AccountActivation.css';
+import { Alert, useAlert } from './components/ui';
 
-interface ActivationCodeProps {
+interface AccountActivationProps {
   organizationType: OrganizationType;
   membershipRole: MembershipRole;
   onActivationComplete: () => void;
   onBack: () => void;
 }
 
-export default function ActivationCode({ 
+export default function AccountActivation({ 
   organizationType, 
   membershipRole, 
   onActivationComplete, 
   onBack 
-}: ActivationCodeProps) {
+}: AccountActivationProps) {
   const [activationCode, setActivationCode] = useState('');
   const [organizationCode, setOrganizationCode] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const { alertState, hideAlert, info, success } = useAlert();
 
   const needsOrganizationCode = membershipRole === 'Employee';
   const needsPayment = membershipRole === 'Owner';
@@ -42,7 +44,10 @@ export default function ActivationCode({
       };
 
       await api.auth.activateAccount(request);
-      onActivationComplete();
+      success('Account activated! Welcome to Balancd!', 'Welcome!');
+      setTimeout(() => {
+        onActivationComplete();
+      }, 1500);
     } catch (err) {
       setError(String(err));
     } finally {
@@ -52,7 +57,7 @@ export default function ActivationCode({
 
   const handlePayment = () => {
     // TODO: Open Stripe checkout or payment page
-    alert('Payment integration coming soon!');
+    info('Payment integration coming soon!');
   };
 
   const orgTypeLabel = organizationType === 'Business' ? 'Business' : 'Firm';
@@ -64,7 +69,7 @@ export default function ActivationCode({
         <p>Enter the activation code sent to your email</p>
       </div>
 
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit} noValidate>
         <ErrorMessage message={error} onDismiss={() => setError('')} />
 
         {/* Activation Code */}
@@ -130,6 +135,14 @@ export default function ActivationCode({
           </p>
         </div>
       </form>
+
+      <Alert
+        isOpen={alertState.isOpen}
+        onClose={hideAlert}
+        message={alertState.message}
+        title={alertState.title}
+        type={alertState.type}
+      />
     </PageContainer>
   );
 }

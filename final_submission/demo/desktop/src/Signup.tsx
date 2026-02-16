@@ -4,6 +4,7 @@ import { SignUpRequest } from './types';
 import { Button, Input, FormGroup, ErrorMessage, PageContainer } from './components/ui';
 import './styles/variables.css';
 import './Signup.css';
+import { Alert, useAlert } from './components/ui';
 
 interface SignupProps {
   onSwitchToLogin: () => void;
@@ -16,6 +17,7 @@ export default function Signup({ onSwitchToLogin }: SignupProps) {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const { alertState, hideAlert, success } = useAlert();
 
   const isValidEmail = (email: string) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -53,8 +55,10 @@ export default function Signup({ onSwitchToLogin }: SignupProps) {
       const request: SignUpRequest = { email, password };
       const message = await api.auth.signUp(request);
       
-      alert(message);
-      onSwitchToLogin();
+      success(message, 'Account Created');
+      setTimeout(() => {
+        onSwitchToLogin();
+      }, 1500);
     } catch (err) {
       setError(String(err));
     } finally {
@@ -139,6 +143,14 @@ export default function Signup({ onSwitchToLogin }: SignupProps) {
           </p>
         </div>
       </form>
+
+      <Alert
+        isOpen={alertState.isOpen}
+        onClose={hideAlert}
+        message={alertState.message}
+        title={alertState.title}
+        type={alertState.type}
+      />
     </PageContainer>
   );
 }
