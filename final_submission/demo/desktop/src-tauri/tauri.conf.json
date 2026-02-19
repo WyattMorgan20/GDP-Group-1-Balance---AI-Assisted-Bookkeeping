@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "Balanced: AI-Assisted Bookkeeping",
+        "title": "Balancd: AI-Assisted Bookkeeping",
         "width": 800,
         "height": 600,
         "minWidth": 400,
@@ -20,8 +20,7 @@
         "decorations": true,
         "transparent": false,
         "resizable": true,
-        "fullscreen": false,
-        "maximized": false
+        "maximized": true
       }
     ],
     "security": {
