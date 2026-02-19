@@ -31,10 +31,7 @@ export default function AccountActivation({
 
   const handleDevBypass = () => {
     if (config.isDevelopment) {
-      success('Account activated! Welcome to Balancd!', 'Welcome!');
-      setTimeout(() => {
-        onActivationComplete();
-      }, 1500);
+      onActivationComplete();
     }
   };
 

@@ -12,7 +12,7 @@ type AppState = 'login' | 'sign-up' | 'role-selection' | 'activation' | 'dashboa
 function App() {
   const [appState, setAppState] = useState<AppState>('login');
   const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const { alertState, hideAlert, success } = useAlert();
+  const { alertState, hideAlert } = useAlert();
 
   const handleLoginSuccess = (user: User) => {
     setCurrentUser(user);
@@ -25,10 +25,7 @@ function App() {
       setAppState('activation');
     } else {
       // Fully onboarded - go to dashboard
-      success('Welcome back! Going to dashboard...');
-      setTimeout(() => {
-        setAppState('dashboard');
-      }, 1000);
+      setAppState('dashboard');
     }
   };
 
