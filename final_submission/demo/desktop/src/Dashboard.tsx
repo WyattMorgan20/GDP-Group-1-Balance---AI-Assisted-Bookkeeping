@@ -47,17 +47,15 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
           
           {/* HOME/DASHBOARD TAB */}
           {activeTab === 'home' && (
-            <>
-              {/* Greeting Banner */}
-              <section className="greeting-banner">
-                <div className="greeting-content">
-                  <h2>{getGreeting()}!</h2>
-                  <p>Welcome to your Balancd dashboard. Let's get started with your bookkeeping.</p>
-                </div>
-              </section>
+            <section className="home-card">
+              {/* Greeting Section */}
+              <div className="home-section greeting-section">
+                <h2>{getGreeting()}!</h2>
+                <p>Welcome to your Balancd dashboard. Let's get started with your bookkeeping.</p>
+              </div>
 
-              {/* Quick Actions */}
-              <section className="quick-actions">
+              {/* Quick Actions Section */}
+              <div className="home-section">
                 <h3>Quick Actions</h3>
                 <div className="actions-grid">
                   <Button
@@ -104,10 +102,10 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                     </div>
                   </Button>
                 </div>
-              </section>
+              </div>
 
-              {/* Stats Overview */}
-              <section className="stats-section">
+              {/* Stats Section */}
+              <div className="home-section">
                 <h3>Overview</h3>
                 <div className="stats-grid">
                   <div className="stat-card">
@@ -134,10 +132,10 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                     <div className="stat-change">Transactions processed</div>
                   </div>
                 </div>
-              </section>
+              </div>
 
-              {/* Recent Activity */}
-              <section className="activity-section">
+              {/* Recent Activity Section */}
+              <div className="home-section">
                 <h3>Recent Activity</h3>
                 <div className="activity-list">
                   <div className="activity-empty">
@@ -145,8 +143,8 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                     <span>Your recent actions will appear here</span>
                   </div>
                 </div>
-              </section>
-            </>
+              </div>
+            </section>
           )}
 
           {/* BOOKS TAB */}
