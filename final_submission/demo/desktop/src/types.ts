@@ -30,3 +30,17 @@ export interface ActivationRequest {
   activation_code: string;
   organization_code: string | null;
 }
+
+export interface TwoFactorSetupRequest {
+  email: string;
+}
+
+export interface TwoFactorSetupResponse {
+  secret: string;
+  qr_code_url: string;
+}
+
+export interface TwoFactorVerifyRequest {
+  email: string;
+  totp_code: string;
+}

@@ -10,7 +10,9 @@ pub fn run() {
             commands::auth::sign_up,
             commands::auth::choose_role,
             commands::auth::activate_account,
-            commands::auth::login
+            commands::auth::login,
+            commands::auth::setup_2fa,
+            commands::auth::verify_2fa
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application")

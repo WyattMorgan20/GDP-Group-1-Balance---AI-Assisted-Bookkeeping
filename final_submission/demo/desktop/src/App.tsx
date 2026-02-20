@@ -1,18 +1,20 @@
 import { useState } from 'react';
 import Login from './Login';
 import Signup from './Signup';
-import Dashbaord from './Dashboard';
+import TwoFactorSetup from './TwoFactorSetup';
 import RoleSelection from './RoleSelection';
 import ActivationCode from './AccountActivation';
+import Dashboard from './Dashboard';
 import { User, OrganizationType, MembershipRole } from './types';
 import { Alert, useAlert } from './components/ui';
 
-type AppState = 'login' | 'sign-up' | 'role-selection' | 'activation' | 'dashboard';
+type AppState = 'login' | 'sign-up' | 'two-factor-setup' | 'role-selection' | 'activation' | 'dashboard';
 
 function App() {
   const [appState, setAppState] = useState<AppState>('login');
   const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const { alertState, hideAlert } = useAlert();
+  const [signupEmail, setSignupEmail] = useState<string>('');
+  const { alertState, hideAlert, success } = useAlert();
 
   const handleLoginSuccess = (user: User) => {
     setCurrentUser(user);
@@ -25,14 +27,17 @@ function App() {
       setAppState('activation');
     } else {
       // Fully onboarded - go to dashboard
-      setAppState('dashboard');
+      success('Welcome back! Going to dashboard...');
+      setTimeout(() => {
+        setAppState('dashboard');
+      }, 1500);
     }
   };
 
   const handleLogout = () => {
     setCurrentUser(null);
     setAppState('login');
-  }
+  };
 
   const handleRoleSelected = (organizationType: OrganizationType, membershipRole: MembershipRole) => {
     if (currentUser) {
@@ -62,6 +67,21 @@ function App() {
     setAppState('login');
   };
 
+  const handle2FASetup = (email: string) => {
+    setSignupEmail(email);
+    setAppState('two-factor-setup');
+  };
+
+  const handle2FASetupComplete = () => {
+    setAppState('login');
+    success('Two-factor authentication enabled! You can now log in.');
+  };
+
+  const handle2FASkip = () => {
+    setAppState('login');
+    success('Two-factor authentication skipped. You can set it up later in your account settings.');
+  };
+
   return (
     <>
       {appState === 'login' && (
@@ -72,7 +92,15 @@ function App() {
       )}
 
       {appState === 'sign-up' && (
-        <Signup onSwitchToLogin={handleSwitchToLogin} />
+        <Signup onSwitchToLogin={handleSwitchToLogin} on2FASetup={handle2FASetup} />
+      )}
+
+      {appState === 'two-factor-setup' && (
+        <TwoFactorSetup 
+          email={signupEmail}
+          onSetupComplete={handle2FASetupComplete}
+          onSkip={handle2FASkip}
+        />
       )}
 
       {appState === 'role-selection' && (
@@ -89,7 +117,7 @@ function App() {
       )}
 
       {appState === 'dashboard' && currentUser && (
-        <Dashbaord
+        <Dashboard
           user={currentUser}
           onLogout={handleLogout}
         />

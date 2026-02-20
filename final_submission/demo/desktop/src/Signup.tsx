@@ -8,9 +8,10 @@ import { Alert, useAlert } from './components/ui';
 
 interface SignupProps {
   onSwitchToLogin: () => void;
+  on2FASetup: (email: string) => void;
 }
 
-export default function Signup({ onSwitchToLogin }: SignupProps) {
+export default function Signup({ onSwitchToLogin, on2FASetup }: SignupProps) {
   const [email, setEmail] = useState('');
   const [confirmEmail, setConfirmEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -57,7 +58,7 @@ export default function Signup({ onSwitchToLogin }: SignupProps) {
       
       success(message, 'Account Created');
       setTimeout(() => {
-        onSwitchToLogin();
+        on2FASetup(email);
       }, 1500);
     } catch (err) {
       setError(String(err));

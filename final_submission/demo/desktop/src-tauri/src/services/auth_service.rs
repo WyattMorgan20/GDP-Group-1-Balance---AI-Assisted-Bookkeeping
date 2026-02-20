@@ -1,4 +1,13 @@
-use crate::logic::auth::{ActivationRequest, LoginRequest, MembershipRole, OrganizationType, RoleSelectionRequest, SignUpRequest, User};
+use crate::logic::auth::{ActivationRequest, LoginRequest, MembershipRole, OrganizationType, RoleSelectionRequest, SignUpRequest, User, TwoFactorSetupRequest, TwoFactorSetupResponse, TwoFactorVerifyRequest};
+use crate::services::totp_service;
+use std::collections::HashMap;
+use std::sync::Mutex;
+
+// In-memory storage for 2FA secrets (for development/testing)
+// In production, this should be persisted in a database
+lazy_static::lazy_static! {
+    static ref TWO_FA_SECRETS: Mutex<HashMap<String, String>> = Mutex::new(HashMap::new());
+}
 
 pub fn sign_up(req: &SignUpRequest) -> Result<String, String> {
     if req.email.trim().is_empty() || req.password.trim().is_empty() {
@@ -143,6 +152,45 @@ pub fn login(req: &LoginRequest) -> Result<User, String> {
     }
 
     Err("Incorrect email or password".into())
+}
+
+pub fn setup_2fa(req: &TwoFactorSetupRequest) -> Result<TwoFactorSetupResponse, String> {
+    // Generate a random secret for the user
+    let secret = totp_service::generate_secret();
+
+    // Generate QR code URL
+    let qr_code_url = totp_service::generate_qr_code_url(&req.email, &secret, "Balancd");
+
+    // Store the secret temporarily in memory
+    // In production, this should be stored in a database with an expiration time
+    let mut secrets = TWO_FA_SECRETS.lock().map_err(|e| format!("Failed to acquire lock: {}", e))?;
+    secrets.insert(req.email.clone(), secret.clone());
+
+    Ok(TwoFactorSetupResponse {
+        secret: secret.clone(),
+        qr_code_url,
+    })
+}
+
+pub fn verify_2fa(req: &TwoFactorVerifyRequest) -> Result<String, String> {
+    // Retrieve the stored secret for this email
+    let secrets = TWO_FA_SECRETS.lock().map_err(|e| format!("Failed to acquire lock: {}", e))?;
+    
+    let stored_secret = secrets.get(&req.email)
+        .ok_or_else(|| "No 2FA setup found for this email. Please set up 2FA first.".to_string())?;
+
+    // Verify the TOTP code matches the stored secret
+    if totp_service::verify_totp(stored_secret, &req.totp_code) {
+        // Remove the secret after successful verification (optional - could mark as verified instead)
+        drop(secrets); // Release the lock
+        
+        let mut secrets = TWO_FA_SECRETS.lock().map_err(|e| format!("Failed to acquire lock: {}", e))?;
+        secrets.remove(&req.email);
+        
+        Ok("Two-factor authentication enabled successfully".into())
+    } else {
+        Err("Invalid authentication code. Please try again.".into())
+    }
 }
 
 /*pub fn needs_onboarding(user: &User) -> bool {

@@ -1,5 +1,5 @@
 import { invoke } from '@tauri-apps/api/core';
-import { User, SignUpRequest, LoginRequest, RoleSelectionRequest, ActivationRequest } from '../types';
+import { User, SignUpRequest, LoginRequest, RoleSelectionRequest, ActivationRequest, TwoFactorSetupRequest, TwoFactorSetupResponse, TwoFactorVerifyRequest } from '../types';
 import { logger } from '../config';
 
 // API service wrapper for all Tauri commands
@@ -53,6 +53,32 @@ export const api = {
         return result;
       } catch (error) {
         logger.error('API: activate_account failed', error);
+        throw error;
+      }
+    },
+
+    //Setup two-factor authentication
+    setup2FA: async (req: TwoFactorSetupRequest): Promise<TwoFactorSetupResponse> => {
+      try {
+        logger.log('API: setup_2fa', req.email);
+        const result = await invoke<TwoFactorSetupResponse>('setup_2fa', { req });
+        logger.log('API: setup_2fa success');
+        return result;
+      } catch (error) {
+        logger.error('API: setup_2fa failed', error);
+        throw error;
+      }
+    },
+
+    //Verify two-factor authentication
+    verify2FA: async (req: TwoFactorVerifyRequest): Promise<string> => {
+      try {
+        logger.log('API: verify_2fa', req.email);
+        const result = await invoke<string>('verify_2fa', { req });
+        logger.log('API: verify_2fa success');
+        return result;
+      } catch (error) {
+        logger.error('API: verify_2fa failed', error);
         throw error;
       }
     }

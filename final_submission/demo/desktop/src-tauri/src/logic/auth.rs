@@ -46,3 +46,20 @@ pub struct ActivationRequest {
     pub activation_code: String,
     pub organization_code: Option<String>
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TwoFactorSetupRequest {
+    pub email: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TwoFactorSetupResponse {
+    pub secret: String,
+    pub qr_code_url: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TwoFactorVerifyRequest {
+    pub email: String,
+    pub totp_code: String,
+}
