@@ -56,7 +56,9 @@ pub fn verify_totp(secret: &str, code: &str) -> bool {
         }
 
         let generated_code = totp::<Sha1>(&decoded_secret, time as u64 / 30);
-        if generated_code == code {
+        // Format the generated code as a zero-padded 6-digit string for comparison
+        let generated_code_str = format!("{:06}", generated_code);
+        if generated_code_str == code {
             return true;
         }
     }
