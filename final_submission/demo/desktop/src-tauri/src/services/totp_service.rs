@@ -36,7 +36,7 @@ pub fn verify_totp(secret: &str, code: &str) -> bool {
     }
 
     // Decode the secret from base32
-    let Ok(decoded_secret) = base32::decode(Alphabet::RFC4648 { padding: true }, secret) else {
+    let Some(decoded_secret) = base32::decode(Alphabet::RFC4648 { padding: true }, secret) else {
         return false;
     };
 
