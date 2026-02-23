@@ -63,8 +63,8 @@ pub fn verify_totp(secret: &str, code: &str) -> bool {
         }
 
         let generated_code = totp::<Sha1>(&decoded_secret, time as u64 / 30);
-        // Format the generated code as a zero-padded 6-digit string for comparison
-        let generated_code_str = format!("{:06}", generated_code);
+        // TOTP should be 6 digits - take mod 1000000 to get last 6 digits
+        let generated_code_str = format!("{:06}", generated_code % 1000000);
         println!("[TOTP] Window offset {}: generated code = {} (comparing to user code: {})", window_offset, generated_code_str, code);
         
         if generated_code_str == code {
