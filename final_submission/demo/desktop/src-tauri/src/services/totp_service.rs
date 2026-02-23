@@ -62,11 +62,13 @@ pub fn verify_totp(secret: &str, code: &str) -> bool {
             continue;
         }
 
-        let generated_code = totp::<Sha1>(&decoded_secret, time as u64 / 30);
-        // totp_lite returns a String, compare directly
-        println!("[TOTP] Window offset {}: generated code = {} (comparing to user code: {})", window_offset, generated_code, code);
+        let generated_code_str = totp::<Sha1>(&decoded_secret, time as u64 / 30);
+        // totp_lite may return more than 6 digits, take only last 6
+        let generated_code: u32 = generated_code_str.parse().unwrap_or(0);
+        let generated_code_6digit = format!("{:06}", generated_code % 1000000);
+        println!("[TOTP] Window offset {}: generated code = {} (full: {}, comparing to user code: {})", window_offset, generated_code_6digit, generated_code_str, code);
         
-        if generated_code == code {
+        if generated_code_6digit == code {
             println!("[TOTP] ✓ CODE MATCH!");
             return true;
         }
