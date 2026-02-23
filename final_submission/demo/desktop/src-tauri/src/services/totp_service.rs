@@ -34,19 +34,25 @@ pub fn verify_totp(secret: &str, code: &str) -> bool {
     let code = code.trim().replace(" ", "");
 
     if code.len() != 6 || !code.chars().all(|c| c.is_numeric()) {
+        println!("[TOTP] Invalid code format: {} (len: {})", code, code.len());
         return false;
     }
 
     // Decode the secret from base32
     let Some(decoded_secret) = base32::decode(Alphabet::RFC4648 { padding: true }, secret) else {
+        println!("[TOTP] Failed to decode secret: {}", secret);
         return false;
     };
+
+    println!("[TOTP] Decoded secret to {} bytes", decoded_secret.len());
 
     // Get current time in seconds since Unix epoch
     let now = SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .unwrap_or_default()
         .as_secs();
+
+    println!("[TOTP] Current time: {}", now);
 
     // Check current window and +/- 1 window (allows for time skew)
     // Each window is 30 seconds
@@ -59,11 +65,15 @@ pub fn verify_totp(secret: &str, code: &str) -> bool {
         let generated_code = totp::<Sha1>(&decoded_secret, time as u64 / 30);
         // Format the generated code as a zero-padded 6-digit string for comparison
         let generated_code_str = format!("{:06}", generated_code);
+        println!("[TOTP] Window offset {}: generated code = {} (comparing to user code: {})", window_offset, generated_code_str, code);
+        
         if generated_code_str == code {
+            println!("[TOTP] ✓ CODE MATCH!");
             return true;
         }
     }
 
+    println!("[TOTP] ✗ NO MATCH in any window");
     false
 }
 
