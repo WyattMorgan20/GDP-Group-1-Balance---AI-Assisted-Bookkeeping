@@ -17,11 +17,12 @@ pub fn generate_secret() -> String {
 /// Uses the standard otpauth:// URI format
 pub fn generate_qr_code_url(email: &str, secret: &str, issuer: &str) -> String {
     let encoded_email = urlencoding::encode(email);
+    let encoded_secret = urlencoding::encode(secret);
     let encoded_issuer = urlencoding::encode(issuer);
 
     format!(
         "otpauth://totp/{}?secret={}&issuer={}",
-        encoded_email, secret, encoded_issuer
+        encoded_email, encoded_secret, encoded_issuer
     )
 }
 
