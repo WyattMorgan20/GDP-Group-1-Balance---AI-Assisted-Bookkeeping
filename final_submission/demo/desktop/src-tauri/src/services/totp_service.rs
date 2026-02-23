@@ -56,7 +56,8 @@ pub fn verify_totp(secret: &str, code: &str) -> bool {
 
     // Check current window and +/- 1 window (allows for time skew)
     // Each window is 30 seconds
-    for window_offset in &[-1, 0, 1] {
+    // Expanded to ±90 seconds (3 windows) to handle clock drift
+    for window_offset in &[-3, -2, -1, 0, 1, 2, 3] {
         let time = now as i64 + (window_offset * 30);
         if time < 0 {
             continue;
