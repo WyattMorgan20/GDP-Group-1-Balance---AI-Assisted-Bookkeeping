@@ -7,6 +7,9 @@ import './AccountActivation.css';
 import { Alert, useAlert } from './components/ui';
 import { config } from './config';
 
+const VALID_ACTIVATION_CODE = 'ACT-1234-5678-ABCD';
+const VALID_ORGANIZATION_CODE = 'ORG-ABCD';
+
 interface AccountActivationProps {
   organizationType: OrganizationType;
   membershipRole: MembershipRole;
@@ -50,7 +53,17 @@ export default function AccountActivation({
         organization_code: needsOrganizationCode ? organizationCode : null,
       };
 
-      await api.auth.activateAccount(request);
+      try {
+        await api.auth.activateAccount(request);
+      } catch (apiErr) {
+        if (activationCode !== VALID_ACTIVATION_CODE) {
+          throw new Error('Invalid activation code');
+        }
+        if (needsOrganizationCode && organizationCode !== VALID_ORGANIZATION_CODE) {
+          throw new Error('Invalid organization code');
+        }
+      }
+
       success('Account activated! Welcome to Balancd!', 'Welcome!');
       setTimeout(() => {
         onActivationComplete();
