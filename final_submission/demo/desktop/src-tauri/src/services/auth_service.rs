@@ -3,9 +3,10 @@ use crate::services::totp_service;
 use std::collections::HashMap;
 use std::sync::Mutex;
 
-// In-memory storage for 2FA secrets (for development/testing)
+// In-memory storage for user accounts and 2FA secrets (for development/testing)
 // In production, this should be persisted in a database
 lazy_static::lazy_static! {
+    static ref USERS: Mutex<HashMap<String, (String, String)>> = Mutex::new(HashMap::new()); // email -> (password, hashed_password)
     static ref TWO_FA_SECRETS: Mutex<HashMap<String, String>> = Mutex::new(HashMap::new());
 }
 
@@ -22,9 +23,20 @@ pub fn sign_up(req: &SignUpRequest) -> Result<String, String> {
         return Err("Password must be at least 8 characters".into());
     }
 
+    // Store the user in memory (case-insensitive email)
+    let mut users = USERS.lock().map_err(|e| format!("Failed to acquire lock: {}", e))?;
+    let email_lower = req.email.to_lowercase();
+    
+    if users.contains_key(&email_lower) {
+        return Err("Email already registered".into());
+    }
+    
+    // For development: store plain password (in production, hash it)
+    users.insert(email_lower, (req.password.clone(), req.password.clone()));
+    println!("[AUTH] Account created for email: {}", req.email);
+
     // In a real implementation:
-    // - Check if email already exists
-    // - Hash password
+    // - Hash password with bcrypt/argon2
     // - Persist user
     // - Generate cryptographically secure activation code
     // - Send activation email
@@ -133,24 +145,27 @@ pub fn login(req: &LoginRequest) -> Result<User, String> {
         return Err("Email and password are required".into());
     }
 
-    // In a real implementation:
-    // - Query user by email
-    // - Verify password hash
-    // - Ensure account_activated == true
-
-    // Test account for now
-    if req.email == "test@balancd.dev" {
-        return Ok(User {
-            id: 1,
-            email: req.email.clone(),
-            first_login: true,
-            role_selected: false,
-            account_activated: false,
-            organization_type: None,
-            membership_role: None
-        });
+    // Look up the user in storage (case-insensitive email)
+    let users = USERS.lock().map_err(|e| format!("Failed to acquire lock: {}", e))?;
+    let email_lower = req.email.to_lowercase();
+    
+    if let Some((_password_plain, password_hash)) = users.get(&email_lower) {
+        // For development: compare plain passwords (in production, use bcrypt verify)
+        if password_hash == &req.password {
+            println!("[AUTH] Login successful for email: {}", req.email);
+            return Ok(User {
+                id: 1,
+                email: req.email.clone(),
+                first_login: true,
+                role_selected: false,
+                account_activated: false,
+                organization_type: None,
+                membership_role: None
+            });
+        }
     }
 
+    println!("[AUTH] Login failed for email: {}", req.email);
     Err("Incorrect email or password".into())
 }
 
@@ -200,12 +215,25 @@ pub fn verify_2fa(req: &TwoFactorVerifyRequest) -> Result<String, String> {
     println!("[2FA] TOTP verification result: {}", is_valid);
     
     if is_valid {
-        // Remove the secret after successful verification (optional - could mark as verified instead)
+        // Remove the secret after successful verification
         drop(secrets); // Release the lock
         
         let mut secrets = TWO_FA_SECRETS.lock().map_err(|e| format!("Failed to acquire lock: {}", e))?;
         secrets.remove(&email_lower);
         println!("[2FA] SUCCESS: Removed secret for email: {}", email_lower);
+        drop(secrets);
+        
+        // Auto-create account if it doesn't exist (2FA completion implies account creation)
+        // Use default password "password123" for now (user can change it later)
+        let default_password = "password123".to_string();
+        
+        let mut users = USERS.lock().map_err(|e| format!("Failed to acquire lock: {}", e))?;
+        if !users.contains_key(&email_lower) {
+            users.insert(email_lower.clone(), (default_password.clone(), default_password));
+            println!("[2FA] Auto-created account for email: {} with default password", email_lower);
+        } else {
+            println!("[2FA] Account already exists for email: {}", email_lower);
+        }
         
         Ok("Two-factor authentication enabled successfully".into())
     } else {
