@@ -161,10 +161,10 @@ pub fn setup_2fa(req: &TwoFactorSetupRequest) -> Result<TwoFactorSetupResponse, 
     // Generate QR code URL
     let qr_code_url = totp_service::generate_qr_code_url(&req.email, &secret, "Balancd");
 
-    // Store the secret temporarily in memory
+    // Store the secret temporarily in memory using lowercase email as key
     // In production, this should be stored in a database with an expiration time
     let mut secrets = TWO_FA_SECRETS.lock().map_err(|e| format!("Failed to acquire lock: {}", e))?;
-    secrets.insert(req.email.clone(), secret.clone());
+    secrets.insert(req.email.to_lowercase(), secret.clone());
 
     Ok(TwoFactorSetupResponse {
         secret: secret.clone(),
@@ -173,10 +173,10 @@ pub fn setup_2fa(req: &TwoFactorSetupRequest) -> Result<TwoFactorSetupResponse, 
 }
 
 pub fn verify_2fa(req: &TwoFactorVerifyRequest) -> Result<String, String> {
-    // Retrieve the stored secret for this email
+    // Retrieve the stored secret for this email using lowercase for case-insensitive lookup
     let secrets = TWO_FA_SECRETS.lock().map_err(|e| format!("Failed to acquire lock: {}", e))?;
     
-    let stored_secret = secrets.get(&req.email)
+    let stored_secret = secrets.get(&req.email.to_lowercase())
         .ok_or_else(|| "No 2FA setup found for this email. Please set up 2FA first.".to_string())?;
 
     // Verify the TOTP code matches the stored secret
@@ -185,7 +185,7 @@ pub fn verify_2fa(req: &TwoFactorVerifyRequest) -> Result<String, String> {
         drop(secrets); // Release the lock
         
         let mut secrets = TWO_FA_SECRETS.lock().map_err(|e| format!("Failed to acquire lock: {}", e))?;
-        secrets.remove(&req.email);
+        secrets.remove(&req.email.to_lowercase());
         
         Ok("Two-factor authentication enabled successfully".into())
     } else {
