@@ -1,4 +1,4 @@
-use base64::{ engine::general_purpose::STANDARD, Engine };
+use base32::Alphabet;
 use rand::Rng;
 use totp_lite::{ totp, Sha1 };
 use std::time::{ SystemTime, UNIX_EPOCH };
@@ -9,8 +9,8 @@ pub fn generate_secret() -> String {
     let mut secret_bytes = [0u8; 32];
     rng.fill(&mut secret_bytes);
 
-    // Encode to base32 for TOTP (standard format)
-    STANDARD.encode(&secret_bytes)
+    // Encode to base32 for TOTP (RFC 4648 standard)
+    base32::encode(Alphabet::RFC4648 { padding: true }, &secret_bytes)
 }
 
 /// Generate QR code URL for authenticator apps
@@ -35,8 +35,8 @@ pub fn verify_totp(secret: &str, code: &str) -> bool {
         return false;
     }
 
-    // Decode the secret from base64
-    let Ok(decoded_secret) = STANDARD.decode(secret) else {
+    // Decode the secret from base32
+    let Ok(decoded_secret) = base32::decode(Alphabet::RFC4648 { padding: true }, secret) else {
         return false;
     };
 
