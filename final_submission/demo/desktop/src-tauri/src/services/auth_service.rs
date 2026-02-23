@@ -145,6 +145,20 @@ pub fn login(req: &LoginRequest) -> Result<User, String> {
         return Err("Email and password are required".into());
     }
 
+    // Development test account
+    if req.email == "test@balancd.dev" && req.password == "password" {
+        println!("[AUTH] Login successful for test account: {}", req.email);
+        return Ok(User {
+            id: 1,
+            email: req.email.clone(),
+            first_login: true,
+            role_selected: false,
+            account_activated: false,
+            organization_type: None,
+            membership_role: None
+        });
+    }
+
     // Look up the user in storage (case-insensitive email)
     let users = USERS.lock().map_err(|e| format!("Failed to acquire lock: {}", e))?;
     let email_lower = req.email.to_lowercase();
