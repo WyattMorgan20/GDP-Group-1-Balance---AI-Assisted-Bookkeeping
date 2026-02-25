@@ -12,6 +12,8 @@ interface SignupProps {
 }
 
 export default function Signup({ onSwitchToLogin, on2FASetup }: SignupProps) {
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [confirmEmail, setConfirmEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -53,7 +55,12 @@ export default function Signup({ onSwitchToLogin, on2FASetup }: SignupProps) {
     setIsLoading(true);
 
     try {
-      const request: SignUpRequest = { email, password };
+      const request: SignUpRequest = {
+        email,
+        password,
+        first_name: firstName,
+        last_name: lastName
+      };
       const message = await api.auth.signUp(request);
       
       success(message, 'Account Created');
@@ -80,6 +87,28 @@ export default function Signup({ onSwitchToLogin, on2FASetup }: SignupProps) {
       <form onSubmit={handleSignup} noValidate>
         <ErrorMessage message={error} onDismiss={() => setError('')} />
 
+        <FormGroup label="First Name" htmlFor="firstName" required>
+          <Input
+            id="firstName"
+            type="text"
+            value={firstName}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFirstName(e.target.value)}
+            placeholder="Enter first name"
+            disabled={isLoading}
+          />
+        </FormGroup>
+
+        <FormGroup label="Last Name" htmlFor="lastName" required>
+          <Input
+            id="lastName"
+            type="text"
+            value={lastName}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setLastName(e.target.value)}
+            placeholder="Enter last name"
+            disabled={isLoading}
+          />
+        </FormGroup>
+        
         <FormGroup label="Email Address" htmlFor="email" required>
           <Input
             id="email"

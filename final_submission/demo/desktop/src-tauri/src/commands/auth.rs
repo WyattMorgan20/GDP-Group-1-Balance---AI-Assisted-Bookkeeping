@@ -1,4 +1,13 @@
-use crate::logic::auth::{ActivationRequest, LoginRequest, RoleSelectionRequest, SignUpRequest, User, TwoFactorSetupRequest, TwoFactorSetupResponse, TwoFactorVerifyRequest};
+use crate::logic::auth::{
+    ActivationRequest,
+    LoginRequest,
+    RoleSelectionRequest,
+    SignUpRequest,
+    User,
+    TwoFactorSetupRequest,
+    TwoFactorSetupResponse,
+    TwoFactorVerifyRequest
+};
 use crate::services::auth_service;
 
 #[tauri::command]
