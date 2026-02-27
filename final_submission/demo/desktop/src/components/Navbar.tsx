@@ -5,15 +5,17 @@ interface NavbarProps {
   activeTab: string;
   onTabChange: (tab: string) => void;
   onLogout: () => void;
+  userName: string;
   userEmail: string;
   userRole: string;
 }
 
 export default function Navbar({ 
-  activeTab, 
-  onTabChange, 
-  onLogout, 
-  userEmail, 
+  activeTab,
+  onTabChange,
+  onLogout,
+  userName,
+  //userEmail,
   userRole 
 }: NavbarProps) {
   const navItems = [
@@ -51,10 +53,10 @@ export default function Navbar({
         <div className="navbar-user">
           <div className="user-info">
             <div className="user-avatar">
-              {userEmail.charAt(0).toUpperCase()}
+              {userName.charAt(0).toUpperCase()}
             </div>
             <div className="user-details">
-              <span className="user-email">{userEmail}</span>
+              <span className="user-name">{userName}</span>
               <span className="user-role">{userRole}</span>
             </div>
           </div>

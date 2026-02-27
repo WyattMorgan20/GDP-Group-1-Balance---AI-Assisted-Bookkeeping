@@ -37,6 +37,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
         activeTab={activeTab}
         onTabChange={setActiveTab}
         onLogout={onLogout}
+        userName={`${user.first_name} ${user.last_name}`}
         userEmail={user.email}
         userRole={getRoleName()}
       />
