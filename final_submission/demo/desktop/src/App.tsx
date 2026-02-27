@@ -3,7 +3,7 @@ import Login from './Login';
 import Signup from './Signup';
 import TwoFactorSetup from './TwoFactorSetup';
 import RoleSelection from './RoleSelection';
-import ActivationCode from './AccountActivation';
+import AccountActivation from './AccountActivation';
 import Dashboard from './Dashboard';
 import { User, OrganizationType, MembershipRole } from './types';
 import { Alert, useAlert } from './components/ui';
@@ -103,12 +103,16 @@ function App() {
         />
       )}
 
-      {appState === 'role-selection' && (
-        <RoleSelection onRoleSelected={handleRoleSelected} />
+      {appState === 'role-selection' && currentUser && (
+        <RoleSelection
+          currentUser={currentUser}
+          onRoleSelected={handleRoleSelected}
+        />
       )}
 
       {appState === 'activation' && currentUser && (
-        <ActivationCode
+        <AccountActivation
+          currentUser={currentUser}
           organizationType={currentUser.organization_type || 'Business'}
           membershipRole={currentUser.membership_role || 'Owner'}
           onActivationComplete={handleActivationComplete}

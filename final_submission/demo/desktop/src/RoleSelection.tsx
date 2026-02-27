@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import api from './services/api';
-import { OrganizationType, MembershipRole, RoleSelectionRequest } from './types';
+import { OrganizationType, MembershipRole, RoleSelectionRequest, User } from './types';
 import { Button, ErrorMessage, PageContainer } from './components/ui';
 import './styles/variables.css';
 import './RoleSelection.css';
 
 interface RoleSelectionProps {
+  currentUser: User;
   onRoleSelected: (organizationType: OrganizationType, membershipRole: MembershipRole) => void;
 }
 
@@ -16,7 +17,7 @@ interface RoleOption {
   description: string;
 }
 
-export default function RoleSelection({ onRoleSelected }: RoleSelectionProps) {
+export default function RoleSelection({ currentUser, onRoleSelected }: RoleSelectionProps) {
   const [selectedRole, setSelectedRole] = useState<RoleOption | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -59,8 +60,9 @@ export default function RoleSelection({ onRoleSelected }: RoleSelectionProps) {
 
     try {
       const request: RoleSelectionRequest = {
+        email: currentUser.email,
         organization_type: selectedRole.organization_type,
-        membership_role: selectedRole.membership_role,
+        membership_role: selectedRole.membership_role
       };
 
       await api.auth.chooseRole(request);

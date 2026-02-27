@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import api from './services/api';
-import { ActivationRequest, MembershipRole, OrganizationType } from './types';
+import { ActivationRequest, MembershipRole, OrganizationType, User } from './types';
 import { Button, Input, FormGroup, ErrorMessage, PageContainer } from './components/ui';
 import './styles/variables.css';
 import './AccountActivation.css';
@@ -11,6 +11,7 @@ const VALID_ACTIVATION_CODE = 'ACT-1234-5678-ABCD';
 const VALID_ORGANIZATION_CODE = 'ORG-ABCD';
 
 interface AccountActivationProps {
+  currentUser: User;
   organizationType: OrganizationType;
   membershipRole: MembershipRole;
   onActivationComplete: () => void;
@@ -18,6 +19,7 @@ interface AccountActivationProps {
 }
 
 export default function AccountActivation({ 
+  currentUser,
   organizationType, 
   membershipRole, 
   onActivationComplete, 
@@ -27,7 +29,7 @@ export default function AccountActivation({
   const [organizationCode, setOrganizationCode] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { alertState, hideAlert, info, success } = useAlert();
+  const { alertState, hideAlert, info } = useAlert();
 
   const needsOrganizationCode = membershipRole === 'Employee';
   const needsPayment = membershipRole === 'Owner';
@@ -37,6 +39,19 @@ export default function AccountActivation({
       onActivationComplete();
     }
   };
+
+  const handleBack = async () => {
+    try {
+      // Reset role selection in backend
+      await api.auth.resetRoleSelection(currentUser.email);
+      
+      // Call the onBack prop to navigate
+      onBack();
+    } catch (err) {
+      console.error('Failed to reset role:', error);
+      setError(String(err));
+    }
+  }
 
   const handleSubmit = async (e: React.SyntheticEvent) => {
     e.preventDefault();
@@ -64,21 +79,18 @@ export default function AccountActivation({
         }
       }
 
-      success('Account activated! Welcome to Balancd!', 'Welcome!');
-      setTimeout(() => {
-        onActivationComplete();
-      }, 1500);
+      onActivationComplete();
     } catch (err) {
       setError(String(err));
     } finally {
       setIsLoading(false);
     }
-  };
+  }
 
   const handlePayment = () => {
     // TODO: Open Stripe checkout or payment page
     info('Payment integration coming soon!');
-  };
+  }
 
   const orgTypeLabel = organizationType === 'Business' ? 'Business' : 'Firm';
 
@@ -152,7 +164,7 @@ export default function AccountActivation({
         )}
 
         <div className="button-group">
-          <Button type="button" className="back-button" onClick={onBack} disabled={isLoading}>
+          <Button type="button" className="back-button" onClick={handleBack} disabled={isLoading}>
             Back
           </Button>
           <Button type="submit" className="activate-button" disabled={isLoading}>

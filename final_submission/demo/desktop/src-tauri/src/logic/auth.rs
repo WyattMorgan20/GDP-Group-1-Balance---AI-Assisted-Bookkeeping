@@ -13,14 +13,29 @@ pub enum MembershipRole {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct User {
+pub struct UserAccount {
     pub id: i32,
+    pub first_name: String,
+    pub last_name: String,
     pub email: String,
+    pub password_hash: String,
     pub first_login: bool,
     pub role_selected: bool,
     pub account_activated: bool,
     pub organization_type: Option<OrganizationType>,
-    pub membership_role: Option<MembershipRole>
+    pub membership_role: Option<MembershipRole>,
+    pub organization_id: Option<i32>
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Organization {
+    pub id: i32,
+    pub name: String,
+    pub organization_type: OrganizationType,
+    pub owner_email: String,
+    pub access_code: String,
+    pub subscription_active: bool,
+    pub created_at: String
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -39,12 +54,14 @@ pub struct LoginRequest {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RoleSelectionRequest {
+    pub email: String,
     pub organization_type: OrganizationType,
     pub membership_role: MembershipRole
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ActivationRequest {
+    pub email: String,
     pub activation_code: String,
     pub organization_code: Option<String>
 }

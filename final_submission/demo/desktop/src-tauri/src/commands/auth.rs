@@ -3,7 +3,7 @@ use crate::logic::auth::{
     LoginRequest,
     RoleSelectionRequest,
     SignUpRequest,
-    User,
+    UserAccount,
     TwoFactorSetupRequest,
     TwoFactorSetupResponse,
     TwoFactorVerifyRequest
@@ -21,12 +21,17 @@ pub fn choose_role(req: RoleSelectionRequest) -> Result<String, String> {
 }
 
 #[tauri::command]
+pub fn reset_choose_role(email: String) -> Result<String, String> {
+    auth_service::reset_choose_role(&email)
+}
+
+#[tauri::command]
 pub fn activate_account(req: ActivationRequest) -> Result<String, String> {
     auth_service::activate_account(&req)
 }
 
 #[tauri::command]
-pub fn login(req: LoginRequest) -> Result<User, String> {
+pub fn login(req: LoginRequest) -> Result<UserAccount, String> {
     auth_service::login(&req)
 }
 

@@ -44,6 +44,19 @@ export const api = {
       }
     },
 
+    //Reset user role
+    resetRoleSelection: async (email: String): Promise<string> => {
+      try {
+        logger.log('API: reset_role_selection', email);
+        const result = await invoke<string>('reset_choose_role', { email });
+        logger.log('API: reset_role_selection success');
+        return result;
+      } catch (error) {
+        logger.error('API: reset_role_selection failed', error);
+        throw error;
+      }
+    },
+
     //Activate account with code
     activateAccount: async (req: ActivationRequest): Promise<string> => {
       try {

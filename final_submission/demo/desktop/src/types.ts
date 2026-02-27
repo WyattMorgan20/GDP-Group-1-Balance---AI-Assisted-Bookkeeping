@@ -3,6 +3,8 @@ export type MembershipRole = 'Owner' | 'Employee';
 
 export interface User {
   id: number;
+  first_name: string;
+  last_name: string;
   email: string;
   first_login: boolean;
   role_selected: boolean;
@@ -24,6 +26,7 @@ export interface LoginRequest {
 }
 
 export interface RoleSelectionRequest {
+  email: String;
   organization_type: OrganizationType;
   membership_role: MembershipRole;
 }

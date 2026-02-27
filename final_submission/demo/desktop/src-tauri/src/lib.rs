@@ -9,6 +9,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             commands::auth::sign_up,
             commands::auth::choose_role,
+            commands::auth::reset_choose_role,
             commands::auth::activate_account,
             commands::auth::login,
             commands::auth::setup_2fa,
