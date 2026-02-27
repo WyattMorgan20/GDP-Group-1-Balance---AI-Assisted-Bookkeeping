@@ -32,6 +32,22 @@ export default function Signup({ onSwitchToLogin, on2FASetup }: SignupProps) {
     setError('');
 
     // Frontend validation
+    if (!firstName.trim() || !lastName.trim() || !email.trim() || !confirmEmail.trim() ||
+        !password.trim() || !confirmPassword.trim()) {
+      setError('Some fields are empty');
+      return;
+    }
+
+    if (firstName.length < 2) {
+      setError('First name must be at least 2 characters');
+      return;
+    }
+
+    if (lastName.length < 2) {
+      setError('Last name must be at least 2 characters');
+      return;
+    }
+
     if (!isValidEmail(email)) {
       setError('Please enter a valid email address');
       return;
