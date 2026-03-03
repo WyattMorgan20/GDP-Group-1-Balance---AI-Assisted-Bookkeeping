@@ -2,6 +2,13 @@ import { useState } from 'react';
 import { User } from './types';
 import { Button } from './components/ui';
 import Navbar from './components/Navbar';
+import {
+  TransactionTrendChart,
+  AccountBalanceChart,
+  MonthEndCloseProgress,
+  AIAssistanceMetrics,
+  ProcessWorkflowTimeline,
+} from './components/DashboardCharts';
 import './Dashboard.css';
 
 interface DashboardProps {
@@ -51,13 +58,91 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
             <section className="home-card">
               {/* Greeting Section */}
               <div className="home-section greeting-section">
-                <h2>{getGreeting()}!</h2>
-                <p>Welcome to your Balancd dashboard. Let's get started with your bookkeeping.</p>
+                <div className="greeting-content">
+                  <h1>{getGreeting()}, {user.first_name}!</h1>
+                  <p className="greeting-subtitle">AI-Assisted Bookkeeping Dashboard</p>
+                  <p className="greeting-description">Welcome to Balancd. Real-time insights with AI-powered accuracy.</p>
+                </div>
+                <div className="greeting-badge">
+                  <span className="badge-label">Status</span>
+                  <span className="badge-value">Active</span>
+                </div>
               </div>
 
-              {/* Quick Actions Section */}
-              <div className="home-section">
-                <h3>Quick Actions</h3>
+              {/* Key Metrics Cards */}
+              <div className="home-section metrics-section">
+                <h2>Key Metrics</h2>
+                <div className="metrics-grid">
+                  <div className="metric-card positive">
+                    <div className="metric-icon">📈</div>
+                    <div className="metric-content">
+                      <span className="metric-label">YTD Revenue</span>
+                      <span className="metric-value">$328,000</span>
+                      <span className="metric-change positive-change">↑ 12.5% vs last year</span>
+                    </div>
+                  </div>
+
+                  <div className="metric-card negative">
+                    <div className="metric-icon">💳</div>
+                    <div className="metric-content">
+                      <span className="metric-label">Total Expenses</span>
+                      <span className="metric-value">$187,000</span>
+                      <span className="metric-change negative-change">↓ 8.3% vs last year</span>
+                    </div>
+                  </div>
+
+                  <div className="metric-card positive">
+                    <div className="metric-icon">💰</div>
+                    <div className="metric-content">
+                      <span className="metric-label">Net Income</span>
+                      <span className="metric-value">$141,000</span>
+                      <span className="metric-change positive-change">↑ 23.1% growth</span>
+                    </div>
+                  </div>
+
+                  <div className="metric-card neutral">
+                    <div className="metric-icon">🔄</div>
+                    <div className="metric-content">
+                      <span className="metric-label">Current Ratio</span>
+                      <span className="metric-value">2.45x</span>
+                      <span className="metric-change">Healthy liquidity</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Charts Section */}
+              <div className="home-section charts-section">
+                <div className="charts-grid">
+                  <div className="chart-wrapper">
+                    <TransactionTrendChart />
+                  </div>
+                  <div className="chart-wrapper">
+                    <AccountBalanceChart />
+                  </div>
+                </div>
+              </div>
+
+              {/* AI Metrics Section */}
+              <div className="home-section charts-section">
+                <div className="charts-grid two-column">
+                  <div className="chart-wrapper">
+                    <AIAssistanceMetrics />
+                  </div>
+                  <div className="chart-wrapper">
+                    <MonthEndCloseProgress />
+                  </div>
+                </div>
+              </div>
+
+              {/* Workflow Timeline */}
+              <div className="home-section timeline-section">
+                <ProcessWorkflowTimeline />
+              </div>
+
+              {/* Quick Actions */}
+              <div className="home-section quick-actions-section">
+                <h2>Quick Actions</h2>
                 <div className="actions-grid">
                   <Button
                     variant="secondary"
@@ -65,6 +150,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                     onClick={() => setActiveTab('records')}
                   >
                     <div className="action-card-content">
+                      <span className="action-icon">➕</span>
                       <h4>Add Records</h4>
                       <p>Create new accounting records</p>
                     </div>
@@ -76,7 +162,8 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                     onClick={() => setActiveTab('reconciliation')}
                   >
                     <div className="action-card-content">
-                      <h4>Prepare Reconciliation</h4>
+                      <span className="action-icon">✓</span>
+                      <h4>Reconciliation</h4>
                       <p>Reconcile accounts</p>
                     </div>
                   </Button>
@@ -87,6 +174,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                     onClick={() => setActiveTab('reports')}
                   >
                     <div className="action-card-content">
+                      <span className="action-icon">📊</span>
                       <h4>View Reports</h4>
                       <p>Generate financial reports</p>
                     </div>
@@ -98,6 +186,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                     onClick={() => setActiveTab('alerts')}
                   >
                     <div className="action-card-content">
+                      <span className="action-icon">🔔</span>
                       <h4>Check Alerts</h4>
                       <p>Review notifications</p>
                     </div>
@@ -105,43 +194,40 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                 </div>
               </div>
 
-              {/* Stats Section */}
-              <div className="home-section">
-                <h3>Overview</h3>
-                <div className="stats-grid">
-                  <div className="stat-card">
-                    <div className="stat-label">Pending Records</div>
-                    <div className="stat-value">0</div>
-                    <div className="stat-change">No pending items</div>
+              {/* AI Benefits Section */}
+              <div className="home-section benefits-section">
+                <h2>AI-Assisted Bookkeeping Benefits</h2>
+                <div className="benefits-grid">
+                  <div className="benefit-card">
+                    <div className="benefit-number">95%</div>
+                    <div className="benefit-text">
+                      <h4>Classification Accuracy</h4>
+                      <p>Automated transaction categorization</p>
+                    </div>
                   </div>
 
-                  <div className="stat-card">
-                    <div className="stat-label">Unreconciled</div>
-                    <div className="stat-value">0</div>
-                    <div className="stat-change">Items to review</div>
+                  <div className="benefit-card">
+                    <div className="benefit-number">50%</div>
+                    <div className="benefit-text">
+                      <h4>Faster Close</h4>
+                      <p>Month-end closing acceleration</p>
+                    </div>
                   </div>
 
-                  <div className="stat-card">
-                    <div className="stat-label">Active Alerts</div>
-                    <div className="stat-value">0</div>
-                    <div className="stat-change">No active alerts</div>
+                  <div className="benefit-card">
+                    <div className="benefit-number">24/7</div>
+                    <div className="benefit-text">
+                      <h4>Continuous Monitoring</h4>
+                      <p>Real-time anomaly detection</p>
+                    </div>
                   </div>
 
-                  <div className="stat-card">
-                    <div className="stat-label">This Period</div>
-                    <div className="stat-value">$0.00</div>
-                    <div className="stat-change">Transactions processed</div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Recent Activity Section */}
-              <div className="home-section">
-                <h3>Recent Activity</h3>
-                <div className="activity-list">
-                  <div className="activity-empty">
-                    <p>No recent activity</p>
-                    <span>Your recent actions will appear here</span>
+                  <div className="benefit-card">
+                    <div className="benefit-number">100%</div>
+                    <div className="benefit-text">
+                      <h4>Audit Ready</h4>
+                      <p>Complete audit trail maintained</p>
+                    </div>
                   </div>
                 </div>
               </div>
