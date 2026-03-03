@@ -16,6 +16,28 @@ interface DashboardProps {
   onLogout: () => void;
 }
 
+// Mock data - replace with real data from backend
+const mockProgress = {
+  notStarted: 14,
+  inProgress: 11,
+  blocked: 2,
+  readyForReview: 5,
+  complete: 3,
+};
+
+const mockTimeline = {
+  currentDay: 12,
+  totalDays: 20,
+  targetDate: '2026-03-14',
+};
+
+const mockTasks = {
+  open: 45,
+  blocked: 8,
+  atRisk: 12,
+  overdue: 3,
+};
+
 export default function Dashboard({ user, onLogout }: DashboardProps) {
   const [activeTab, setActiveTab] = useState('home');
 
@@ -37,6 +59,77 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
 
   const isOwner = user.membership_role === 'Owner';
 
+  // Calculate progress percentage and status
+  const calculateProgress = () => {
+    const total = Object.values(mockProgress).reduce((a, b) => a + b, 0);
+    const percentComplete = ((mockProgress.complete / total) * 100).toFixed(0);
+    const progressRatio = mockTimeline.currentDay / mockTimeline.totalDays;
+    const completionRatio = mockProgress.complete / total;
+    
+    let status = 'On Track';
+    if (completionRatio > progressRatio + 0.1) status = 'Ahead';
+    if (completionRatio < progressRatio - 0.1) status = 'Behind';
+    
+    return { percentComplete, status };
+  };
+
+  const { percentComplete, status } = calculateProgress();
+
+  const sections = [
+    { key: 'notStarted', value: mockProgress.notStarted, color: '#e2e8f0', label: 'Not Started' },
+    { key: 'inProgress', value: mockProgress.inProgress, color: '#93c5fd', label: 'In Progress' },
+    { key: 'blocked', value: mockProgress.blocked, color: '#60a5fa', label: 'Blocked' },
+    { key: 'readyForReview', value: mockProgress.readyForReview, color: '#3b82f6', label: 'Ready For Review' },
+    { key: 'complete', value: mockProgress.complete, color: '#0b3bab', label: 'Complete' },
+  ];
+
+  // SVG Progress Wheel - Circular with sections
+  const createProgressWheel = () => {
+    const total = Object.values(mockProgress).reduce((a, b) => a + b, 0);
+    const radius = 80;
+    const center = 100;
+    
+    let currentAngle = -90; // Start at top center
+    
+    return sections.map((section) => {
+      const percentage = section.value / total;
+      const angle = percentage * 360;
+      const startAngle = currentAngle;
+      const endAngle = currentAngle + angle;
+      
+      // Convert angles to radians
+      const startRad = (startAngle * Math.PI) / 180;
+      const endRad = (endAngle * Math.PI) / 180;
+      
+      // Calculate arc path
+      const startX = center + radius * Math.cos(startRad);
+      const startY = center + radius * Math.sin(startRad);
+      const endX = center + radius * Math.cos(endRad);
+      const endY = center + radius * Math.sin(endRad);
+      
+      const largeArc = angle > 180 ? 1 : 0;
+      
+      const pathData = [
+        `M ${center} ${center}`,
+        `L ${startX} ${startY}`,
+        `A ${radius} ${radius} 0 ${largeArc} 1 ${endX} ${endY}`,
+        'Z'
+      ].join(' ');
+      
+      currentAngle = endAngle;
+      
+      return (
+        <path
+          key={section.key}
+          d={pathData}
+          fill={section.color}
+          stroke="white"
+          strokeWidth="2"
+        />
+      );
+    });
+  };
+
   return (
     <div className="dashboard">
       {/* Navbar */}
@@ -53,19 +146,117 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
       <main className="dashboard-main">
         <div className="dashboard-container">
           
-          {/* HOME/DASHBOARD TAB */}
+          {/* HOME TAB */}
           {activeTab === 'home' && (
             <section className="home-card">
               {/* Greeting Section */}
               <div className="home-section greeting-section">
                 <div className="greeting-content">
-                  <h1>{getGreeting()}, {user.first_name}!</h1>
-                  <p className="greeting-subtitle">AI-Assisted Bookkeeping Dashboard</p>
-                  <p className="greeting-description">Welcome to Balancd. Real-time insights with AI-powered accuracy.</p>
+                  <h2>{getGreeting()}!</h2>
+                  <p>
+                    Welcome to your Balancd dashboard. Let's get started with your bookkeeping.
+                  </p>
                 </div>
-                <div className="greeting-badge">
-                  <span className="badge-label">Status</span>
-                  <span className="badge-value">Active</span>
+              </div>
+
+              {/* Progress Dashboard */}
+              <div className="home-section progress-dashboard">
+                <div className="dashboard-grid">
+                  {/* Progress Wheel */}
+                  <div className="progress-wheel-container">
+                    <h3>Close Progress</h3>
+                    <div className="progress-wheel-wrapper">
+                      <svg viewBox="0 0 200 200" className="progress-wheel">
+                        {/* Outer circle sections */}
+                        {createProgressWheel()}
+                        
+                        {/* White center circle */}
+                        <circle cx="100" cy="100" r="50" fill="white"/>
+                        
+                        {/* Center text */}
+                        <text x="100" y="100" textAnchor="middle" className="progress-percentage">
+                          {percentComplete}%
+                        </text>
+                        <text x="100" y="115" textAnchor="middle" className="progress-label">
+                          Complete
+                        </text>
+                      </svg>
+                      
+                      {/* Legend */}
+                      <div className="progress-legend">
+                        {sections.map((section) => {
+                          const total = Object.values(mockProgress).reduce((a, b) => a + b, 0);
+                          const percentage = ((section.value / total) * 100).toFixed(0);
+                          return (
+                            <div key={section.key} className="legend-item">
+                              <span className="legend-color" style={{ backgroundColor: section.color }}></span>
+                              <span>{section.label}</span>
+                              <span className="legend-value">
+                                {section.value} <span className="legend-percentage">({percentage}%)</span>
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Timeline Status */}
+                  <div className="timeline-status">
+                    <h3>Timeline Status</h3>
+                    <div className="timeline-boxes">
+                      {/* Days to Target Box */}
+                      <div className="timeline-box">
+                        <div className="timeline-box-label">DAYS TO TARGET CLOSE</div>
+                        <div className="timeline-box-value">{mockTimeline.totalDays - mockTimeline.currentDay}</div>
+                        <div className="timeline-box-sublabel">
+                          Target: {new Date(mockTimeline.targetDate + 'T00:00:00').toLocaleDateString('en-US', {
+                            month: 'short',
+                            day: 'numeric'
+                          })}
+                        </div>
+                      </div>
+                      
+                      {/* Status and Calendar Column */}
+                      <div className="timeline-column">
+                        {/* Status Box */}
+                        <div className={`timeline-box timeline-box-status status-${status.toLowerCase().replace(' ', '-')}`}>
+                          <div className="timeline-box-value-text">{status}</div>
+                        </div>
+                        
+                        {/* View Calendar Box */}
+                        <div className="timeline-box timeline-box-calendar">
+                          <div className="timeline-box-label">CLOSE CALENDAR</div>
+                          <Button variant="primary" size="small" onClick={() => setActiveTab('calendar')}>
+                            View Calendar
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Task Summary */}
+                <div className="task-summary">
+                  <h3>Task Summary</h3>
+                  <div className="task-summary-grid">
+                    <div className="task-metric">
+                      <div className="task-metric-value">{mockTasks.open}</div>
+                      <div className="task-metric-label">Open</div>
+                    </div>
+                    <div className="task-metric task-blocked">
+                      <div className="task-metric-value">{mockTasks.blocked}</div>
+                      <div className="task-metric-label">Blocked</div>
+                    </div>
+                    <div className="task-metric task-at-risk">
+                      <div className="task-metric-value">{mockTasks.atRisk}</div>
+                      <div className="task-metric-label">At Risk</div>
+                    </div>
+                    <div className="task-metric task-overdue">
+                      <div className="task-metric-value">{mockTasks.overdue}</div>
+                      <div className="task-metric-label">Overdue</div>
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -74,7 +265,6 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                 <h2>Key Metrics</h2>
                 <div className="metrics-grid">
                   <div className="metric-card positive">
-                    <div className="metric-icon">📈</div>
                     <div className="metric-content">
                       <span className="metric-label">YTD Revenue</span>
                       <span className="metric-value">$328,000</span>
@@ -83,7 +273,6 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                   </div>
 
                   <div className="metric-card negative">
-                    <div className="metric-icon">💳</div>
                     <div className="metric-content">
                       <span className="metric-label">Total Expenses</span>
                       <span className="metric-value">$187,000</span>
@@ -92,7 +281,6 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                   </div>
 
                   <div className="metric-card positive">
-                    <div className="metric-icon">💰</div>
                     <div className="metric-content">
                       <span className="metric-label">Net Income</span>
                       <span className="metric-value">$141,000</span>
@@ -101,7 +289,6 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                   </div>
 
                   <div className="metric-card neutral">
-                    <div className="metric-icon">🔄</div>
                     <div className="metric-content">
                       <span className="metric-label">Current Ratio</span>
                       <span className="metric-value">2.45x</span>
@@ -150,7 +337,6 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                     onClick={() => setActiveTab('records')}
                   >
                     <div className="action-card-content">
-                      <span className="action-icon">➕</span>
                       <h4>Add Records</h4>
                       <p>Create new accounting records</p>
                     </div>
@@ -162,7 +348,6 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                     onClick={() => setActiveTab('reconciliation')}
                   >
                     <div className="action-card-content">
-                      <span className="action-icon">✓</span>
                       <h4>Reconciliation</h4>
                       <p>Reconcile accounts</p>
                     </div>
@@ -174,7 +359,6 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                     onClick={() => setActiveTab('reports')}
                   >
                     <div className="action-card-content">
-                      <span className="action-icon">📊</span>
                       <h4>View Reports</h4>
                       <p>Generate financial reports</p>
                     </div>
@@ -186,7 +370,6 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                     onClick={() => setActiveTab('alerts')}
                   >
                     <div className="action-card-content">
-                      <span className="action-icon">🔔</span>
                       <h4>Check Alerts</h4>
                       <p>Review notifications</p>
                     </div>
