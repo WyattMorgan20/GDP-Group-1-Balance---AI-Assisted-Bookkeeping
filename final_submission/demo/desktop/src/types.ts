@@ -32,6 +32,7 @@ export interface RoleSelectionRequest {
 }
 
 export interface ActivationRequest {
+  email: string;
   activation_code: string;
   organization_code: string | null;
 }

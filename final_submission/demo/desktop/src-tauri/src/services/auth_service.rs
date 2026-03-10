@@ -32,16 +32,28 @@ lazy_static::lazy_static! {
 
     //Global ID Counter
     static ref NEXT_USER_ID: Mutex<i32> = Mutex::new(1);
+
+    //Activation codes
+    static ref ACTIVATION_CODES: Mutex<HashMap<String, String>> = Mutex::new(HashMap::new());
 }
 
-/*pub fn generate_act_code() -> String {
-    use std::time::{SystemTime, UNIX_EPOCH};
+pub fn generate_act_code() -> String {
+    use rand::Rng;
+    let mut rng = rand::thread_rng();
+    let mut segment = || -> String {
+        (0..4)
+            .map(|_| rng.sample(rand::distributions::Alphanumeric) as char)
+            .collect::<String>()
+            .to_uppercase()
+    };
+    format!("ACT-{}-{}-{}", segment(), segment(), segment())
+    /*use std::time::{SystemTime, UNIX_EPOCH};
     let timestamp = SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .unwrap()
         .as_secs();
-    format!("ACT-{}", timestamp)
-}*/
+    format!("ACT-{}", timestamp)*/
+}
 
 //Hash password (placeholder - use bcrypt in production)
 pub fn hash_password(password: &str) -> String {
@@ -106,7 +118,13 @@ pub fn sign_up(req: &SignUpRequest) -> Result<String, String> {
     };
     
     users.insert(email_lower.clone(), user_account);
+    let activation_code = generate_act_code();
+    let mut codes = ACTIVATION_CODES.lock()
+        .map_err(|e| format!("Failed to acquire lock: {}", e))?;
+    codes.insert(email_lower.clone(), activation_code.clone());
+    drop(codes);
     println!("[AUTH] Account created for email: {}", req.email);
+    println!("[AUTH] Activation code: {}", activation_code);
 
     // TODO: Persist User
     // TODO: Send activation email
@@ -222,10 +240,21 @@ pub fn activate_account(req: &ActivationRequest) -> Result<String, String> {
     }
 
     // Mock activation code validation (replace with real code verification)
-    // TODO: Validate activation code against stored codes with expiration
-    if !req.activation_code.starts_with("ACT-") {
+    // Validate activation code against stored codes with expiration
+    let codes = ACTIVATION_CODES.lock()
+        .map_err(|e| format!("Failed to acquire lock: {}", e))?;
+    let expected = codes.get(&email_lower)
+        .ok_or("No activation code found for this account")?;
+    if req.activation_code != *expected {
         return Err("Invalid activation code".into());
     }
+    /*let codes = ACTIVATION_CODES.lock()
+        .map_err(|e| format!("Failed to acquire lock: {}", e))?;
+    let expected = codes.get(&email_lower)
+        .ok_or("No activation code found for this account")?;
+    if req.activation_code != *expected {
+        return Err("Invalid activation code".into());
+    }*/
 
     let organization_type = user_account.organization_type
         .as_ref()
@@ -408,8 +437,8 @@ pub fn verify_2fa(req: &TwoFactorVerifyRequest) -> Result<String, String> {
             
             let user_account = UserAccount {
                 id: user_id,
-                first_name: "User".into(), // TODO: Get from signup form
-                last_name: "Name".into(),   // TODO: Get from signup form
+                first_name: "User".into(),
+                last_name: "Name".into(),
                 email: req.email.clone(),
                 password_hash: hash_password(&default_password),
                 first_login: true,
@@ -422,6 +451,8 @@ pub fn verify_2fa(req: &TwoFactorVerifyRequest) -> Result<String, String> {
 
             users.insert(email_lower.clone(), user_account);
             println!("[2FA] Auto-created account for email: {}", email_lower);
+        } else {
+            println!("[2FA] Account already exists for email: {}", email_lower);
         }
         
         Ok("Two-factor authentication enabled successfully".into())

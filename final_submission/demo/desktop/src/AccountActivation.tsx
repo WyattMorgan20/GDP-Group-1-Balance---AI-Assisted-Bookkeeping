@@ -7,7 +7,6 @@ import './AccountActivation.css';
 import { Alert, useAlert } from './components/ui';
 import { config } from './config';
 
-const VALID_ACTIVATION_CODE = 'ACT-1234-5678-ABCD';
 const VALID_ORGANIZATION_CODE = 'ORG-ABCD';
 
 interface AccountActivationProps {
@@ -64,20 +63,12 @@ export default function AccountActivation({
       }
 
       const request: ActivationRequest = {
+        email: currentUser.email,
         activation_code: activationCode,
         organization_code: needsOrganizationCode ? organizationCode : null,
       };
 
-      try {
-        await api.auth.activateAccount(request);
-      } catch (apiErr) {
-        if (activationCode !== VALID_ACTIVATION_CODE) {
-          throw new Error('Invalid activation code');
-        }
-        if (needsOrganizationCode && organizationCode !== VALID_ORGANIZATION_CODE) {
-          throw new Error('Invalid organization code');
-        }
-      }
+      await api.auth.activateAccount(request);
 
       onActivationComplete();
     } catch (err) {
