@@ -1,6 +1,6 @@
 import { invoke } from '@tauri-apps/api/core';
-import { User, SignUpRequest, LoginRequest, RoleSelectionRequest, ActivationRequest, TwoFactorSetupRequest, TwoFactorSetupResponse, TwoFactorVerifyRequest } from '../types';
-import { logger } from '../config';
+import { User, SignUpRequest, LoginRequest, RoleSelectionRequest, ActivationRequest, TwoFactorSetupRequest, TwoFactorSetupResponse, TwoFactorVerifyRequest } from '../logic/types';
+import { logger } from '../logic/config';
 
 // API service wrapper for all Tauri commands
 export const api = {

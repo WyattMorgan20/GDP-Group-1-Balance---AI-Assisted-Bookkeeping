@@ -1,11 +1,10 @@
 import { useState, useRef, useEffect } from 'react';
 import { toDataURL } from 'qrcode';
-import api from './services/api';
-import { TwoFactorSetupRequest, TwoFactorVerifyRequest } from './types';
-import { Button, Input, FormGroup, ErrorMessage, PageContainer } from './components/ui';
-import { Alert, useAlert } from './components/ui';
-import './styles/variables.css';
-import './TwoFactorSetup.css';
+import api from '../services/api';
+import { TwoFactorSetupRequest, TwoFactorVerifyRequest } from '../logic/types';
+import { Button, Input, FormGroup, ErrorMessage, PageContainer, Alert, useAlert } from '../components/ui';
+import '../styles/variables.css';
+import '../styles/TwoFactorSetup.css';
 
 interface TwoFactorSetupProps {
   email: string;

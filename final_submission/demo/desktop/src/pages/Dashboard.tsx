@@ -1,15 +1,14 @@
 import { useState } from 'react';
-import { User } from './types';
-import { Button } from './components/ui';
-import Navbar from './components/Navbar';
+import { User } from '../logic/types';
+import { Button } from '../components/ui';
+import Navbar from '../components/ui/Navbar';
+import { CloseProgressWheel } from '../components/DashboardCharts';
 import {
-  TransactionTrendChart,
-  AccountBalanceChart,
-  MonthEndCloseProgress,
-  AIAssistanceMetrics,
-  ProcessWorkflowTimeline,
-} from './components/DashboardCharts';
-import './Dashboard.css';
+  ClosePhaseProgressList,
+  ReconciliationStatusList,
+  JournalEntryStatusList
+} from '../components/ProgressLists';
+import '../styles/Dashboard.css';
 
 interface DashboardProps {
   user: User;
@@ -18,9 +17,8 @@ interface DashboardProps {
 
 // Mock data - replace with real data from backend
 const mockProgress = {
-  notStarted: 14,
+  notStarted: 12,
   inProgress: 11,
-  blocked: 2,
   readyForReview: 5,
   complete: 3,
 };
@@ -51,8 +49,8 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
   const getRoleName = () => {
     if (!user.organization_type || !user.membership_role) return 'User';
     
-    const orgType = user.organization_type === 'Business' ? 'Business' : 'Firm';
-    const role = user.membership_role === 'Owner' ? 'Owner' : 'Employee';
+    const orgType = user.organization_type? 'Business' : 'Firm';
+    const role = user.membership_role? 'Owner' : 'Employee';
     
     return `${orgType} ${role}`;
   };
@@ -75,61 +73,6 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
 
   const { percentComplete, status } = calculateProgress();
 
-  const sections = [
-    { key: 'notStarted', value: mockProgress.notStarted, color: '#e2e8f0', label: 'Not Started' },
-    { key: 'inProgress', value: mockProgress.inProgress, color: '#93c5fd', label: 'In Progress' },
-    { key: 'blocked', value: mockProgress.blocked, color: '#60a5fa', label: 'Blocked' },
-    { key: 'readyForReview', value: mockProgress.readyForReview, color: '#3b82f6', label: 'Ready For Review' },
-    { key: 'complete', value: mockProgress.complete, color: '#0b3bab', label: 'Complete' },
-  ];
-
-  // SVG Progress Wheel - Circular with sections
-  const createProgressWheel = () => {
-    const total = Object.values(mockProgress).reduce((a, b) => a + b, 0);
-    const radius = 80;
-    const center = 100;
-    
-    let currentAngle = -90; // Start at top center
-    
-    return sections.map((section) => {
-      const percentage = section.value / total;
-      const angle = percentage * 360;
-      const startAngle = currentAngle;
-      const endAngle = currentAngle + angle;
-      
-      // Convert angles to radians
-      const startRad = (startAngle * Math.PI) / 180;
-      const endRad = (endAngle * Math.PI) / 180;
-      
-      // Calculate arc path
-      const startX = center + radius * Math.cos(startRad);
-      const startY = center + radius * Math.sin(startRad);
-      const endX = center + radius * Math.cos(endRad);
-      const endY = center + radius * Math.sin(endRad);
-      
-      const largeArc = angle > 180 ? 1 : 0;
-      
-      const pathData = [
-        `M ${center} ${center}`,
-        `L ${startX} ${startY}`,
-        `A ${radius} ${radius} 0 ${largeArc} 1 ${endX} ${endY}`,
-        'Z'
-      ].join(' ');
-      
-      currentAngle = endAngle;
-      
-      return (
-        <path
-          key={section.key}
-          d={pathData}
-          fill={section.color}
-          stroke="white"
-          strokeWidth="2"
-        />
-      );
-    });
-  };
-
   return (
     <div className="dashboard">
       {/* Navbar */}
@@ -138,7 +81,6 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
         onTabChange={setActiveTab}
         onLogout={onLogout}
         userName={`${user.first_name} ${user.last_name}`}
-        userEmail={user.email}
         userRole={getRoleName()}
       />
 
@@ -149,8 +91,9 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
           {/* HOME TAB */}
           {activeTab === 'home' && (
             <section className="home-card">
+
               {/* Greeting Section */}
-              <div className="home-section greeting-section">
+              <div className="home-tab greeting-section">
                 <div className="greeting-content">
                   <h2>{getGreeting()}!</h2>
                   <p>
@@ -159,46 +102,14 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                 </div>
               </div>
 
-              {/* Progress Dashboard */}
-              <div className="home-section progress-dashboard">
-                <div className="dashboard-grid">
+              {/* Progress Dashboard Section */}
+              <div className="home-tab progress-dashboard-section">
+                <div className="progress-dashboard-grid">
+
                   {/* Progress Wheel */}
                   <div className="progress-wheel-container">
                     <h3>Close Progress</h3>
-                    <div className="progress-wheel-wrapper">
-                      <svg viewBox="0 0 200 200" className="progress-wheel">
-                        {/* Outer circle sections */}
-                        {createProgressWheel()}
-                        
-                        {/* White center circle */}
-                        <circle cx="100" cy="100" r="50" fill="white"/>
-                        
-                        {/* Center text */}
-                        <text x="100" y="100" textAnchor="middle" className="progress-percentage">
-                          {percentComplete}%
-                        </text>
-                        <text x="100" y="115" textAnchor="middle" className="progress-label">
-                          Complete
-                        </text>
-                      </svg>
-                      
-                      {/* Legend */}
-                      <div className="progress-legend">
-                        {sections.map((section) => {
-                          const total = Object.values(mockProgress).reduce((a, b) => a + b, 0);
-                          const percentage = ((section.value / total) * 100).toFixed(0);
-                          return (
-                            <div key={section.key} className="legend-item">
-                              <span className="legend-color" style={{ backgroundColor: section.color }}></span>
-                              <span>{section.label}</span>
-                              <span className="legend-value">
-                                {section.value} <span className="legend-percentage">({percentage}%)</span>
-                              </span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
+                    <CloseProgressWheel percentComplete={percentComplete}/>
                   </div>
 
                   {/* Timeline Status */}
@@ -206,7 +117,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                     <h3>Timeline Status</h3>
                     <div className="timeline-boxes">
                       {/* Days to Target Box */}
-                      <div className="timeline-box">
+                      <div className="timeline-box timeline-box-days">
                         <div className="timeline-box-label">DAYS TO TARGET CLOSE</div>
                         <div className="timeline-box-value">{mockTimeline.totalDays - mockTimeline.currentDay}</div>
                         <div className="timeline-box-sublabel">
@@ -215,22 +126,17 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                             day: 'numeric'
                           })}
                         </div>
+                        <div className={`timeline-status-badge status-${status.toLowerCase().replace(' ', '-')}`}>
+                          {status}
+                        </div>
                       </div>
                       
-                      {/* Status and Calendar Column */}
-                      <div className="timeline-column">
-                        {/* Status Box */}
-                        <div className={`timeline-box timeline-box-status status-${status.toLowerCase().replace(' ', '-')}`}>
-                          <div className="timeline-box-value-text">{status}</div>
-                        </div>
-                        
-                        {/* View Calendar Box */}
-                        <div className="timeline-box timeline-box-calendar">
-                          <div className="timeline-box-label">CLOSE CALENDAR</div>
-                          <Button variant="primary" size="small" onClick={() => setActiveTab('calendar')}>
-                            View Calendar
-                          </Button>
-                        </div>
+                      {/* Calendar Box */}
+                      <div className="timeline-box timeline-box-calendar">
+                        <div className="timeline-box-label">CLOSE CALENDAR</div>
+                        <Button variant="primary" size="small" onClick={() => setActiveTab('calendar')}>
+                          View Calendar
+                        </Button>
                       </div>
                     </div>
                   </div>
@@ -240,7 +146,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                 <div className="task-summary">
                   <h3>Task Summary</h3>
                   <div className="task-summary-grid">
-                    <div className="task-metric">
+                    <div className="task-metric task-open">
                       <div className="task-metric-value">{mockTasks.open}</div>
                       <div className="task-metric-label">Open</div>
                     </div>
@@ -260,158 +166,80 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                 </div>
               </div>
 
-              {/* Key Metrics Cards */}
-              <div className="home-section metrics-section">
-                <h2>Key Metrics</h2>
-                <div className="metrics-grid">
-                  <div className="metric-card positive">
-                    <div className="metric-content">
-                      <span className="metric-label">YTD Revenue</span>
-                      <span className="metric-value">$328,000</span>
-                      <span className="metric-change positive-change">↑ 12.5% vs last year</span>
-                    </div>
+              {/* Operational Work Section */}
+              <div className="home-tab operational-work">
+                <div className="operational-work-grid">
+
+                  {/* Assigned To Me */}
+                  <div className="assigned-to-me">
+                    <h3>Assigned To Me</h3>
+                    
                   </div>
 
-                  <div className="metric-card negative">
-                    <div className="metric-content">
-                      <span className="metric-label">Total Expenses</span>
-                      <span className="metric-value">$187,000</span>
-                      <span className="metric-change negative-change">↓ 8.3% vs last year</span>
-                    </div>
+                  {/* Task Risk Distribution */}
+                  <div className="overdue-at-risk">
+                    <h3>Overdue/At Risk</h3>
+                    
                   </div>
+                </div>
 
-                  <div className="metric-card positive">
-                    <div className="metric-content">
-                      <span className="metric-label">Net Income</span>
-                      <span className="metric-value">$141,000</span>
-                      <span className="metric-change positive-change">↑ 23.1% growth</span>
-                    </div>
-                  </div>
-
-                  <div className="metric-card neutral">
-                    <div className="metric-content">
-                      <span className="metric-label">Current Ratio</span>
-                      <span className="metric-value">2.45x</span>
-                      <span className="metric-change">Healthy liquidity</span>
-                    </div>
-                  </div>
+                {/* Close Phases Progress */}
+                <div className="phase-progress">
+                  <h3>Close Phase Progress</h3>
+                  <ClosePhaseProgressList/>
                 </div>
               </div>
 
-              {/* Charts Section */}
-              <div className="home-section charts-section">
-                <div className="charts-grid">
-                  <div className="chart-wrapper">
-                    <TransactionTrendChart />
+              {/* Close Details Section */}
+              <div className="home-tab close-details-section">
+                <div className="close-details-grid">
+
+                  {/* Reconciliation Status */}
+                  <div className="reconciliation-status">
+                    <h3>Reconciliation Status</h3>
+                    <ReconciliationStatusList/>
                   </div>
-                  <div className="chart-wrapper">
-                    <AccountBalanceChart />
+
+                  {/* Journal Entry Status */}
+                  <div className="journal-entry-status">
+                    <h3>Journal Entry Status</h3>
+                    <JournalEntryStatusList/>
                   </div>
+                    
                 </div>
               </div>
 
-              {/* AI Metrics Section */}
-              <div className="home-section charts-section">
-                <div className="charts-grid two-column">
-                  <div className="chart-wrapper">
-                    <AIAssistanceMetrics />
-                  </div>
-                  <div className="chart-wrapper">
-                    <MonthEndCloseProgress />
-                  </div>
-                </div>
-              </div>
-
-              {/* Workflow Timeline */}
-              <div className="home-section timeline-section">
-                <ProcessWorkflowTimeline />
-              </div>
-
-              {/* Quick Actions */}
-              <div className="home-section quick-actions-section">
-                <h2>Quick Actions</h2>
+              {/* Quick Actions Section */}
+              <div className="home-tab quick-actions-section">
+                <h3>Quick Actions</h3>
                 <div className="actions-grid">
-                  <Button
-                    variant="secondary"
-                    className="action-card-button"
-                    onClick={() => setActiveTab('records')}
-                  >
+                  <Button variant="secondary" className="action-card-button" onClick={() => setActiveTab('records')}>
                     <div className="action-card-content">
                       <h4>Add Records</h4>
                       <p>Create new accounting records</p>
                     </div>
                   </Button>
 
-                  <Button
-                    variant="secondary"
-                    className="action-card-button"
-                    onClick={() => setActiveTab('reconciliation')}
-                  >
+                  <Button variant="secondary" className="action-card-button" onClick={() => setActiveTab('reconciliation')}>
                     <div className="action-card-content">
                       <h4>Reconciliation</h4>
                       <p>Reconcile accounts</p>
                     </div>
                   </Button>
 
-                  <Button
-                    variant="secondary"
-                    className="action-card-button"
-                    onClick={() => setActiveTab('reports')}
-                  >
+                  <Button variant="secondary" className="action-card-button" onClick={() => setActiveTab('reports')}>
                     <div className="action-card-content">
                       <h4>View Reports</h4>
                       <p>Generate financial reports</p>
                     </div>
                   </Button>
 
-                  <Button
-                    variant="secondary"
-                    className="action-card-button"
-                    onClick={() => setActiveTab('alerts')}
-                  >
+                  <Button variant="secondary" className="action-card-button" onClick={() => setActiveTab('alerts')}>
                     <div className="action-card-content">
                       <h4>Check Alerts</h4>
                       <p>Review notifications</p>
                     </div>
                   </Button>
-                </div>
-              </div>
-
-              {/* AI Benefits Section */}
-              <div className="home-section benefits-section">
-                <h2>AI-Assisted Bookkeeping Benefits</h2>
-                <div className="benefits-grid">
-                  <div className="benefit-card">
-                    <div className="benefit-number">95%</div>
-                    <div className="benefit-text">
-                      <h4>Classification Accuracy</h4>
-                      <p>Automated transaction categorization</p>
-                    </div>
-                  </div>
-
-                  <div className="benefit-card">
-                    <div className="benefit-number">50%</div>
-                    <div className="benefit-text">
-                      <h4>Faster Close</h4>
-                      <p>Month-end closing acceleration</p>
-                    </div>
-                  </div>
-
-                  <div className="benefit-card">
-                    <div className="benefit-number">24/7</div>
-                    <div className="benefit-text">
-                      <h4>Continuous Monitoring</h4>
-                      <p>Real-time anomaly detection</p>
-                    </div>
-                  </div>
-
-                  <div className="benefit-card">
-                    <div className="benefit-number">100%</div>
-                    <div className="benefit-text">
-                      <h4>Audit Ready</h4>
-                      <p>Complete audit trail maintained</p>
-                    </div>
-                  </div>
                 </div>
               </div>
             </section>

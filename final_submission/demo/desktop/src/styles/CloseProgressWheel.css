@@ -1,0 +1,61 @@
+/* Progress Wheel */
+.progress-wheel-wrapper {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: var(--spacing-xl);
+}
+
+.progress-wheel {
+  width: 200px;
+  height: 200px;
+}
+
+.progress-percentage {
+  font-size: 28px;
+  font-weight: bold;
+  fill: var(--color-text-primary);
+}
+
+.progress-label {
+  font-size: 12px;
+  fill: var(--color-text-secondary);
+}
+
+/* Progress Legend */
+.progress-wheel-legend {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.progress-wheel-legend-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  font-size: 14px;
+  color: var(--color-text-primary);
+}
+
+.progress-wheel-legend-item span:nth-child(2) {
+  flex: 1;
+  white-space: nowrap;
+}
+
+.progress-wheel-legend-color {
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.progress-wheel-legend-value {
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  margin-left: var(--spacing-sm);
+}
+
+.progress-wheel-legend-percentage {
+  color: #c3c8ce;
+}

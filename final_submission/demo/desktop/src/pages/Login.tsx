@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import api from './services/api';
-import { User, LoginRequest } from './types';
-import { Button, Input, FormGroup, ErrorMessage, PageContainer } from './components/ui';
-import './styles/variables.css';
-import './Login.css';
+import api from '../services/api';
+import { User, LoginRequest } from '../logic/types';
+import { Button, Input, FormGroup, ErrorMessage, PageContainer } from '../components/ui';
+import '../styles/variables.css';
+import '../styles/Login.css';
 
 interface LoginProps {
   onSwitchToSignup: () => void;

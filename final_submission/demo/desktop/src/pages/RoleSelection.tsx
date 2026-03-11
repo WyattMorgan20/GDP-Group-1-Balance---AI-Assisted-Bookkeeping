@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import api from './services/api';
-import { OrganizationType, MembershipRole, RoleSelectionRequest, User } from './types';
-import { Button, ErrorMessage, PageContainer } from './components/ui';
-import './styles/variables.css';
-import './RoleSelection.css';
+import api from '../services/api';
+import { OrganizationType, MembershipRole, RoleSelectionRequest, User } from '../logic/types';
+import { Button, ErrorMessage, PageContainer } from '../components/ui';
+import '../styles/variables.css';
+import '../styles/RoleSelection.css';
 
 interface RoleSelectionProps {
   currentUser: User;

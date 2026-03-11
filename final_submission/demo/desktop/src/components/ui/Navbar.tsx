@@ -1,12 +1,11 @@
-import { Button } from './ui';
-import './Navbar.css';
+import Button from './Button';
+import '../../styles/Navbar.css';
 
 interface NavbarProps {
   activeTab: string;
   onTabChange: (tab: string) => void;
   onLogout: () => void;
   userName: string;
-  userEmail: string;
   userRole: string;
 }
 
@@ -15,7 +14,6 @@ export default function Navbar({
   onTabChange,
   onLogout,
   userName,
-  //userEmail,
   userRole 
 }: NavbarProps) {
   const navItems = [
@@ -53,7 +51,7 @@ export default function Navbar({
         <div className="navbar-user">
           <div className="user-info">
             <div className="user-avatar">
-              {userName.charAt(0).toUpperCase()}
+              {userName.split(' ')[0].charAt(0).toUpperCase()}{userName.split(' ')[1].charAt(0).toUpperCase()}
             </div>
             <div className="user-details">
               <span className="user-name">{userName}</span>

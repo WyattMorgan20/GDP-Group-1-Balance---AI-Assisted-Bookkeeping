@@ -1,4 +1,4 @@
-import './LoadingSpinner.css';
+import '../../styles/LoadingSpinner.css';
 
 export type SpinnerSize = 'small' | 'medium' | 'large';
 

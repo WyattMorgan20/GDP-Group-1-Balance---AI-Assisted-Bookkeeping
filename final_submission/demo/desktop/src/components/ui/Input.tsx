@@ -1,5 +1,5 @@
 import React from 'react';
-import './Input.css';
+import '../../styles/Input.css';
 
 export type InputType = 'text' | 'email' | 'password' | 'code';
 export type InputState = 'default' | 'valid' | 'invalid';

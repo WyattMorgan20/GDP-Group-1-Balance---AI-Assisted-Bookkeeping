@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import Login from './Login';
-import Signup from './Signup';
-import TwoFactorSetup from './TwoFactorSetup';
-import RoleSelection from './RoleSelection';
-import AccountActivation from './AccountActivation';
-import Dashboard from './Dashboard';
-import { User, OrganizationType, MembershipRole } from './types';
+import Login from './pages/Login';
+import Signup from './pages/Signup';
+import TwoFactorSetup from './pages/TwoFactorSetup';
+import RoleSelection from './pages/RoleSelection';
+import AccountActivation from './pages/AccountActivation';
+import Dashboard from './pages/Dashboard';
+import { User, OrganizationType, MembershipRole } from './logic/types';
 import { Alert, useAlert } from './components/ui';
 
 type AppState = 'login' | 'sign-up' | 'two-factor-setup' | 'role-selection' | 'activation' | 'dashboard';

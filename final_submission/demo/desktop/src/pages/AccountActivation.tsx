@@ -1,11 +1,10 @@
 import { useState } from 'react';
-import api from './services/api';
-import { ActivationRequest, MembershipRole, OrganizationType, User } from './types';
-import { Button, Input, FormGroup, ErrorMessage, PageContainer } from './components/ui';
-import './styles/variables.css';
-import './AccountActivation.css';
-import { Alert, useAlert } from './components/ui';
-import { config } from './config';
+import api from '../services/api';
+import { ActivationRequest, MembershipRole, OrganizationType, User } from '../logic/types';
+import { Button, Input, FormGroup, ErrorMessage, PageContainer, Alert, useAlert } from '../components/ui';
+import '../styles/variables.css';
+import '../styles/AccountActivation.css';
+import { config } from '../logic/config';
 
 const VALID_ORGANIZATION_CODE = 'ORG-ABCD';
 
