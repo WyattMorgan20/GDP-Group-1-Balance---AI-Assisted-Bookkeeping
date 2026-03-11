@@ -6,8 +6,6 @@ import '../styles/variables.css';
 import '../styles/AccountActivation.css';
 import { config } from '../logic/config';
 
-const VALID_ORGANIZATION_CODE = 'ORG-ABCD';
-
 interface AccountActivationProps {
   currentUser: User;
   organizationType: OrganizationType;
