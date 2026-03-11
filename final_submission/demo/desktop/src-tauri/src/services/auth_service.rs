@@ -47,12 +47,6 @@ pub fn generate_act_code() -> String {
             .to_uppercase()
     };
     format!("ACT-{}-{}-{}", segment(), segment(), segment())
-    /*use std::time::{SystemTime, UNIX_EPOCH};
-    let timestamp = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap()
-        .as_secs();
-    format!("ACT-{}", timestamp)*/
 }
 
 //Hash password (placeholder - use bcrypt in production)
@@ -248,13 +242,6 @@ pub fn activate_account(req: &ActivationRequest) -> Result<String, String> {
     if req.activation_code != *expected {
         return Err("Invalid activation code".into());
     }
-    /*let codes = ACTIVATION_CODES.lock()
-        .map_err(|e| format!("Failed to acquire lock: {}", e))?;
-    let expected = codes.get(&email_lower)
-        .ok_or("No activation code found for this account")?;
-    if req.activation_code != *expected {
-        return Err("Invalid activation code".into());
-    }*/
 
     let organization_type = user_account.organization_type
         .as_ref()
