@@ -1,6 +1,8 @@
-mod commands;
-mod logic;
-mod services;
+pub mod commands;
+pub mod logic;
+pub mod services;
+pub mod db;
+pub mod logging;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {

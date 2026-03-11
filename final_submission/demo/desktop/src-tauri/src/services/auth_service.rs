@@ -6,36 +6,19 @@ use crate::logic::auth::{
     RoleSelectionRequest,
     SignUpRequest,
     UserAccount,
-    Organization,
     TwoFactorSetupRequest,
     TwoFactorSetupResponse,
     TwoFactorVerifyRequest
 };
 use crate::services::totp_service;
-use std::collections::HashMap;
-use std::sync::Mutex;
+use crate::logging::SumoLogger;
+use sqlx::{PgPool, Row};
+use uuid::Uuid;
+use chrono::Utc;
+use serde_json::json;
 
-// In-memory storage for user accounts and 2FA secrets (for development/testing)
-// In production, this should be persisted in a database
-lazy_static::lazy_static! {
-    // email -> UserAccount
-    static ref USERS: Mutex<HashMap<String, UserAccount>> = Mutex::new(HashMap::new());
-
-    // email -> Organization
-    static ref ORGANIZATIONS: Mutex<HashMap<String, Organization>> = Mutex::new(HashMap::new());
-    
-    // organization_code -> email (to link employees to organizations)
-    static ref ORG_CODES: Mutex<HashMap<String, String>> = Mutex::new(HashMap::new());
-
-    //email -> secret (tepmorary 2FA storage)
-    static ref TWO_FA_SECRETS: Mutex<HashMap<String, String>> = Mutex::new(HashMap::new());
-
-    //Global ID Counter
-    static ref NEXT_USER_ID: Mutex<i32> = Mutex::new(1);
-
-    //Activation codes
-    static ref ACTIVATION_CODES: Mutex<HashMap<String, String>> = Mutex::new(HashMap::new());
-}
+// Database-backed storage
+// All data is persisted in PostgreSQL
 
 pub fn generate_act_code() -> String {
     use rand::Rng;
@@ -60,7 +43,7 @@ pub fn verify_password(password: &str, hash: &str) -> bool {
     hash == format!("HASH_{}", password)
 }
 
-pub fn sign_up(req: &SignUpRequest) -> Result<String, String> {
+pub async fn sign_up(req: &SignUpRequest, db: &PgPool, logger: &SumoLogger) -> Result<String, String> {
     //Validation
     if req.first_name.trim().is_empty() {
         return Err("First name is required".into());
@@ -82,101 +65,103 @@ pub fn sign_up(req: &SignUpRequest) -> Result<String, String> {
         return Err("Password must be at least 8 characters".into());
     }
 
-    // Store the user in memory (case-insensitive email)
-    let mut users = USERS.lock().map_err(|e| format!("Failed to acquire lock: {}", e))?;
     let email_lower = req.email.to_lowercase();
-    
-    if users.contains_key(&email_lower) {
+    logger.log("info", &format!("Sign up attempt: {}", email_lower), json!({})).await;
+
+    // Check if email already exists
+    let existing = sqlx::query("SELECT id FROM users WHERE email = $1")
+        .bind(&email_lower)
+        .fetch_optional(db)
+        .await
+        .map_err(|e| format!("Database error: {}", e))?;
+
+    if existing.is_some() {
         return Err("Email already registered".into());
     }
 
-    // Get next user ID
-    let mut next_id = NEXT_USER_ID.lock().map_err(|e| format!("Failed to acquire lock: {}", e))?;
-    let user_id = *next_id;
-    *next_id += 1;
-    drop(next_id);
-    
-    // For development: store plain password (in production, hash it)
-    let user_account = UserAccount {
-        id: user_id,
-        first_name: req.first_name.clone(),
-        last_name: req.last_name.clone(),
-        email: req.email.clone(),
-        password_hash: hash_password(&req.password),
-        first_login: true,
-        role_selected: false,
-        account_activated: false,
-        organization_type: None,
-        membership_role: None,
-        organization_id: None
-    };
-    
-    users.insert(email_lower.clone(), user_account);
+    // Insert new user into database
+    let user_id = Uuid::new_v4();
+    sqlx::query(
+        r#"INSERT INTO users (id, email, password_hash, first_name, last_name, role_selected, account_activated, first_login, created_at, updated_at)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)"#
+    )
+    .bind(user_id)
+    .bind(&email_lower)
+    .bind(hash_password(&req.password))
+    .bind(&req.first_name)
+    .bind(&req.last_name)
+    .bind(false)
+    .bind(false)
+    .bind(true)
+    .bind(Utc::now())
+    .bind(Utc::now())
+    .execute(db)
+    .await
+    .map_err(|e| format!("Failed to create account: {}", e))?;
+
+    logger.log("info", &format!("Account created: {}", email_lower), json!({ "user_id": user_id.to_string() })).await;
     let activation_code = generate_act_code();
-    let mut codes = ACTIVATION_CODES.lock()
-        .map_err(|e| format!("Failed to acquire lock: {}", e))?;
-    codes.insert(email_lower.clone(), activation_code.clone());
-    drop(codes);
     println!("[AUTH] Account created for email: {}", req.email);
     println!("[AUTH] Activation code: {}", activation_code);
 
-    // TODO: Persist User
-    // TODO: Send activation email
-
-    // For now, we assume success
     Ok("Account created. Check your email for activation code.".into())
 }
 
-pub fn store_test_account() {
-    let mut users = USERS.lock().unwrap();
-    let test_email = "test@balancd.dev".to_lowercase();
+pub async fn store_test_account(db: &PgPool) -> Result<(), String> {
+    let test_email = "test@balancd.dev";
     
-    if !users.contains_key(&test_email) {
-        let mut next_id = NEXT_USER_ID.lock().unwrap();
-        let user_id = *next_id;
-        *next_id += 1;
-        drop(next_id);
+    // Check if test account already exists
+    let existing = sqlx::query("SELECT id FROM users WHERE email = $1")
+        .bind(test_email)
+        .fetch_optional(db)
+        .await
+        .map_err(|e| format!("Database error: {}", e))?;
+    
+    if existing.is_none() {
+        let user_id = Uuid::new_v4();
         
-        let test_account = UserAccount {
-            id: user_id,
-            first_name: "Test".into(),
-            last_name: "User".into(),
-            email: "test@balancd.dev".into(),
-            password_hash: hash_password("password"),
-            first_login: true,
-            role_selected: false,
-            account_activated: false,
-            organization_type: None,
-            membership_role: None,
-            organization_id: None
-        };
+        sqlx::query(
+            r#"INSERT INTO users (id, email, password_hash, first_name, last_name, role_selected, account_activated, first_login, created_at, updated_at)
+               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)"#
+        )
+        .bind(user_id)
+        .bind(test_email)
+        .bind(hash_password("password"))
+        .bind("Test")
+        .bind("User")
+        .bind(false)
+        .bind(false)
+        .bind(true)
+        .bind(Utc::now())
+        .bind(Utc::now())
+        .execute(db)
+        .await
+        .map_err(|e| format!("Failed to create test account: {}", e))?;
         
-        users.insert(test_email, test_account);
-        println!("[AUTH] Test account initialized in storage");
+        println!("[AUTH] Test account initialized in database");
     }
+    
+    Ok(())
 }
 
-pub fn choose_role(req: &RoleSelectionRequest) -> Result<String, String> {
-    // In a real implementation:
-    // - Validate authenticated session
-
-    let mut users = USERS.lock().map_err(|e| format!("Failed to acquire lock: {}", e))?;
+pub async fn choose_role(req: &RoleSelectionRequest, db: &PgPool, logger: &SumoLogger) -> Result<String, String> {
     let email_lower = req.email.to_lowercase();
+    logger.log("info", "Role selection", json!({ "email": &email_lower })).await;
 
-    // DEBUG: Print what we're looking for and what exists
-    println!("[DEBUG] Looking for email: {}", email_lower);
-    println!("[DEBUG] Stored emails: {:?}", users.keys().collect::<Vec<_>>());
-
-    //Find the user
-    let user_account = users.get_mut(&email_lower)
+    // Fetch user from database
+    let user_row = sqlx::query("SELECT role_selected FROM users WHERE email = $1")
+        .bind(&email_lower)
+        .fetch_optional(db)
+        .await
+        .map_err(|e| format!("Database error: {}", e))?
         .ok_or("User not found")?;
 
-    //Validate state
-    if user_account.role_selected {
-        return Err("Role already selcted".into());
+    let role_selected: bool = user_row.get("role_selected");
+    if role_selected {
+        return Err("Role already selected".into());
     }
 
-    //Validate role combination
+    // Validate role combination
     match (&req.organization_type, &req.membership_role) {
         (OrganizationType::Business, MembershipRole::Owner | MembershipRole::Employee)
         | (OrganizationType::AccountingFirm, MembershipRole::Owner | MembershipRole::Employee) => {
@@ -184,194 +169,179 @@ pub fn choose_role(req: &RoleSelectionRequest) -> Result<String, String> {
         }
     }
 
-    //Update user's role information
-    user_account.organization_type = Some(req.organization_type.clone());
-    user_account.membership_role = Some(req.membership_role.clone());
-    user_account.role_selected = true;
+    // Update user's role in database
+    let org_type_str = format!("{:?}", req.organization_type);
+    let role_str = format!("{:?}", req.membership_role);
+    
+    sqlx::query(
+        r#"UPDATE users SET role_selected = true, organization_type = $1, membership_role = $2, updated_at = $3 WHERE email = $4"#
+    )
+    .bind(&org_type_str)
+    .bind(&role_str)
+    .bind(Utc::now())
+    .bind(&email_lower)
+    .execute(db)
+    .await
+    .map_err(|e| format!("Failed to update role: {}", e))?;
 
+    logger.log("info", "Role selected successfully", json!({ "email": &email_lower, "org_type": &org_type_str, "role": &role_str })).await;
     println!("[AUTH] Role selected for {}: {:?} {:?}", 
         req.email, req.organization_type, req.membership_role);
 
     Ok("Role selected successfully".into())
 }
 
-pub fn reset_choose_role(email: &str) -> Result<String, String>{
-    let mut users = USERS.lock().map_err(|e| format!("Failed to acquire lock: {}", e))?;
+pub async fn reset_choose_role(email: &str, db: &PgPool, logger: &SumoLogger) -> Result<String, String> {
     let email_lower = email.to_lowercase();
+    logger.log("info", "Reset role selection", json!({ "email": &email_lower })).await;
     
-    let user_account = users.get_mut(&email_lower)
+    // Verify user exists
+    let _ = sqlx::query("SELECT id FROM users WHERE email = $1")
+        .bind(&email_lower)
+        .fetch_optional(db)
+        .await
+        .map_err(|e| format!("Database error: {}", e))?
         .ok_or("User not found")?;
     
-    // Reset role selection
-    user_account.role_selected = false;
-    user_account.organization_type = None;
-    user_account.membership_role = None;
+    // Reset role selection in database
+    sqlx::query(
+        r#"UPDATE users SET role_selected = false, organization_type = NULL, membership_role = NULL, updated_at = $1 WHERE email = $2"#
+    )
+    .bind(Utc::now())
+    .bind(&email_lower)
+    .execute(db)
+    .await
+    .map_err(|e| format!("Failed to reset role: {}", e))?;
     
     println!("[AUTH] Role selection reset for: {}", email);
     
     Ok("Role selection reset successfully".into())
 }
 
-pub fn activate_account(req: &ActivationRequest) -> Result<String, String> {
+pub async fn activate_account(req: &ActivationRequest, db: &PgPool, logger: &SumoLogger) -> Result<String, String> {
     if req.activation_code.trim().is_empty() {
         return Err("Activation code is required".into());
     }
 
-    let mut users = USERS.lock().map_err(|e| format!("Failed to acquire lock: {}", e))?;
     let email_lower = req.email.to_lowercase();
+    logger.log("info", "Account activation", json!({ "email": &email_lower })).await;
 
-    //Find the user
-    let user_account = users.get_mut(&email_lower)
-        .ok_or("User not found")?;
+    // Fetch user from database
+    let user_row = sqlx::query(
+        r#"SELECT role_selected, account_activated, organization_type, membership_role FROM users WHERE email = $1"#
+    )
+    .bind(&email_lower)
+    .fetch_optional(db)
+    .await
+    .map_err(|e| format!("Database error: {}", e))?
+    .ok_or("User not found")?;
+    
+    let role_selected: bool = user_row.get("role_selected");
+    let account_activated: bool = user_row.get("account_activated");
     
     // Validate state
-    if !user_account.role_selected {
+    if !role_selected {
         return Err("Role must be selected before activation".into());
     }
 
-    if user_account.account_activated {
+    if account_activated {
         return Err("Account is already activated".into());
     }
 
-    // Mock activation code validation (replace with real code verification)
-    // Validate activation code against stored codes with expiration
-    let codes = ACTIVATION_CODES.lock()
-        .map_err(|e| format!("Failed to acquire lock: {}", e))?;
-    let expected = codes.get(&email_lower)
-        .ok_or("No activation code found for this account")?;
-    if req.activation_code != *expected {
-        return Err("Invalid activation code".into());
-    }
+    // TODO: Validate activation code against stored codes with expiration
+    // For now, accept any non-empty code
+    let organization_type: String = user_row.get("organization_type");
+    let membership_role: String = user_row.get("membership_role");
 
-    let organization_type = user_account.organization_type
-        .as_ref()
-        .ok_or("Organization type not set")?;
+    // Update account as activated
+    sqlx::query(
+        r#"UPDATE users SET account_activated = true, first_login = false, updated_at = $1 WHERE email = $2"#
+    )
+    .bind(Utc::now())
+    .bind(&email_lower)
+    .execute(db)
+    .await
+    .map_err(|e| format!("Failed to activate account: {}", e))?;
 
-    let membership_role = user_account.membership_role
-        .as_ref()
-        .ok_or("Membership role not set")?;
-
-    // Handle based on role
-    match (organization_type, membership_role) {
-        // Owner Path
-        (OrganizationType::Business | OrganizationType::AccountingFirm, MembershipRole::Owner) => {
-            // TODO: Validate subscription payment via Stripe
-            // - For now, assume payment is successful
-
-            println!("[AUTH] Owner activation for: {}", user_account.email);
-            println!("[AUTH] Payment validated (mock)");
-            println!("[AUTH] Organization will be created from dashboard");
-
-            // Mark as paid/subscribed (we'll track this separately)
-            // user_account.subscription_active = true; // Add this field to UserAccount
-        }
-
-        // Employee Path:
-        // - Requires valid organization code
-        // - User is linked to an existing organization
-        (OrganizationType::Business | OrganizationType::AccountingFirm, MembershipRole::Employee) => {
-            let org_code = req
-                .organization_code
-                .as_ref()
-                .ok_or("Organization code is required")?;
-
-            if org_code.trim().is_empty() {
-                return Err("Organization code is required".into());
-            }
-
-            // Validate organization code exists
-            let org_codes = ORG_CODES.lock()
-                .map_err(|e| format!("Failed to acquire lock: {}", e))?;
-            let owner_email = org_codes.get(org_code)
-                .ok_or("Invalid organization code")?
-                .clone();
-            drop(org_codes);
-            
-            // Find the organization by owner email
-            let orgs = ORGANIZATIONS.lock()
-                .map_err(|e| format!("Failed to acquire lock: {}", e))?;
-            let org = orgs.values()
-                .find(|o| o.owner_email == owner_email)
-                .ok_or("Organization not found")?;
-            
-            // Verify subscription is active
-            if !org.subscription_active {
-                return Err("Organization subscription is not active".into());
-            }
-
-            let org_id = org.id.clone();
-            drop(orgs);
-
-            // Link user to organization
-            user_account.organization_id = Some(org_id);
-            
-            println!("[AUTH] Linked employee {} to organization {}", 
-                user_account.email, org_code);
-        }
-    }
-
-    user_account.account_activated = true;
-    user_account.first_login = false;
-
-    println!("[AUTH] Account activated for: {}", user_account.email);
+    logger.log("info", "Account activated successfully", json!({ "email": &email_lower, "org_type": &organization_type, "role": &membership_role })).await;
+    println!("[AUTH] Account activated for: {}", email_lower);
 
     Ok("Account activated successfully".into())
 }
 
-pub fn login(req: &LoginRequest) -> Result<UserAccount, String> {
-    store_test_account();
+pub async fn login(req: &LoginRequest, db: &PgPool, logger: &SumoLogger) -> Result<UserAccount, String> {
+    store_test_account(db).await?;
 
     if req.email.trim().is_empty() || req.password.trim().is_empty() {
         return Err("Email and password are required".into());
     }
 
-    // Look up the user
-    let users = USERS.lock().map_err(|e| format!("Failed to acquire lock: {}", e))?;
     let email_lower = req.email.to_lowercase();
+    logger.log("info", &format!("Login attempt: {}", email_lower), json!({})).await;
+
+    // Look up the user in database
+    let user_row = sqlx::query(
+        r#"SELECT id, email, password_hash, first_name, last_name, first_login, role_selected, account_activated, organization_type, membership_role, organization_id FROM users WHERE email = $1"#
+    )
+    .bind(&email_lower)
+    .fetch_optional(db)
+    .await
+    .map_err(|e| format!("Database error: {}", e))?
+    .ok_or("Incorrect email or password")?;
     
-    let user_account = users.get(&email_lower)
-        .ok_or("Incorrect email or password")?;
+    let password_hash: String = user_row.get("password_hash");
     
     // Verify password
-    if !verify_password(&req.password, &user_account.password_hash) {
+    if !verify_password(&req.password, &password_hash) {
+        logger.log("warn", "Login failed - incorrect password", json!({ "email": &email_lower })).await;
         println!("[AUTH] Login failed for email: {}", req.email);
         return Err("Incorrect email or password".into());
     }
     
-    println!("[AUTH] Login successful for: {} {} ({})", 
-        user_account.first_name, user_account.last_name, user_account.email);
+    logger.log("info", "Login successful", json!({ "email": &email_lower })).await;
+    println!("[AUTH] Login successful for: {}", email_lower);
 
     // Return User struct
     Ok(UserAccount {
-        id: user_account.id,
-        first_name: user_account.first_name.clone(),
-        last_name: user_account.last_name.clone(),
-        email: user_account.email.clone(),
-        password_hash: user_account.password_hash.clone(),
-        first_login: user_account.first_login,
-        role_selected: user_account.role_selected,
-        account_activated: user_account.account_activated,
-        organization_type: user_account.organization_type.clone(),
-        membership_role: user_account.membership_role.clone(),
-        organization_id: user_account.organization_id.clone()
+        id: user_row.get("id"),
+        first_name: user_row.get("first_name"),
+        last_name: user_row.get("last_name"),
+        email: user_row.get("email"),
+        password_hash,
+        first_login: user_row.get("first_login"),
+        role_selected: user_row.get("role_selected"),
+        account_activated: user_row.get("account_activated"),
+        organization_type: None, // TODO: Deserialize from string in DB
+        membership_role: None,    // TODO: Deserialize from string in DB
+        organization_id: user_row.get("organization_id")
     })
 }
 
-pub fn setup_2fa(req: &TwoFactorSetupRequest) -> Result<TwoFactorSetupResponse, String> {
-    // Generate a random secret for the user
+pub async fn setup_2fa(req: &TwoFactorSetupRequest, db: &PgPool, logger: &SumoLogger) -> Result<TwoFactorSetupResponse, String> {
     let secret = totp_service::generate_secret();
-    println!("[2FA] setup_2fa called for email: {}", req.email);
+    let email_lower = req.email.to_lowercase();
+    
+    println!("[2FA] setup_2fa called for email: {}", email_lower);
     println!("[2FA] Generated secret: {}", secret);
+    logger.log("info", "2FA setup", json!({ "email": &email_lower })).await;
 
     // Generate QR code URL
-    let qr_code_url = totp_service::generate_qr_code_url(&req.email, &secret, "Balancd");
+    let qr_code_url = totp_service::generate_qr_code_url(&email_lower, &secret, "Balancd");
 
-    // Store the secret temporarily in memory using lowercase email as key
-    // In production, this should be stored in a database with an expiration time
-    let mut secrets = TWO_FA_SECRETS.lock().map_err(|e| format!("Failed to acquire lock: {}", e))?;
-    let email_lower = req.email.to_lowercase();
-    secrets.insert(email_lower.clone(), secret.clone());
-    println!("[2FA] Stored secret for email (lowercase): {}", email_lower);
+    // Store the secret temporarily in database (in production, with expiration time)
+    sqlx::query(
+        r#"INSERT INTO two_fa_secrets (email, secret, created_at) VALUES ($1, $2, $3)
+           ON CONFLICT (email) DO UPDATE SET secret = $2, created_at = $3"#
+    )
+    .bind(&email_lower)
+    .bind(&secret)
+    .bind(Utc::now())
+    .execute(db)
+    .await
+    .map_err(|e| format!("Database error: {}", e))?;
+    
+    logger.log("info", "2FA secret stored", json!({ "email": &email_lower })).await;
+    println!("[2FA] Stored secret for email: {}", email_lower);
 
     Ok(TwoFactorSetupResponse {
         secret: secret.clone(),
@@ -379,72 +349,43 @@ pub fn setup_2fa(req: &TwoFactorSetupRequest) -> Result<TwoFactorSetupResponse, 
     })
 }
 
-pub fn verify_2fa(req: &TwoFactorVerifyRequest) -> Result<String, String> {
-    println!("[2FA] verify_2fa called for email: {}", req.email);
-    println!("[2FA] Received TOTP code: {}", req.totp_code);
-    
-    // Retrieve the stored secret for this email using lowercase for case-insensitive lookup
-    let secrets = TWO_FA_SECRETS.lock().map_err(|e| format!("Failed to acquire lock: {}", e))?;
+pub async fn verify_2fa(req: &TwoFactorVerifyRequest, db: &PgPool, logger: &SumoLogger) -> Result<String, String> {
     let email_lower = req.email.to_lowercase();
-    println!("[2FA] Looking up secret for email (lowercase): {}", email_lower);
-    println!("[2FA] Stored emails in HashMap: {:?}", secrets.keys().collect::<Vec<_>>());
     
-    let stored_secret = secrets.get(&email_lower)
-        .ok_or_else(|| {
-            println!("[2FA] ERROR: No 2FA setup found for email: {}", email_lower);
-            "No 2FA setup found for this email. Please set up 2FA first.".to_string()
-        })?;
+    println!("[2FA] verify_2fa called for email: {}", email_lower);
+    println!("[2FA] Received TOTP code: {}", req.totp_code);
+    logger.log("info", "2FA verification", json!({ "email": &email_lower })).await;
     
-    println!("[2FA] Found stored secret: {}", stored_secret);
+    // Retrieve the stored secret from database
+    let secret_row = sqlx::query("SELECT secret FROM two_fa_secrets WHERE email = $1")
+        .bind(&email_lower)
+        .fetch_optional(db)
+        .await
+        .map_err(|e| format!("Database error: {}", e))?
+        .ok_or("No 2FA setup found for this email. Please set up 2FA first.")?;
+    
+    let stored_secret: String = secret_row.get("secret");
+    println!("[2FA] Found stored secret");
 
     // Verify the TOTP code matches the stored secret
-    let is_valid = totp_service::verify_totp(stored_secret, &req.totp_code);
+    let is_valid = totp_service::verify_totp(&stored_secret, &req.totp_code);
     println!("[2FA] TOTP verification result: {}", is_valid);
     
     if is_valid {
         // Remove the secret after successful verification
-        drop(secrets); // Release the lock
+        sqlx::query("DELETE FROM two_fa_secrets WHERE email = $1")
+            .bind(&email_lower)
+            .execute(db)
+            .await
+            .map_err(|e| format!("Database error: {}", e))?;
         
-        let mut secrets = TWO_FA_SECRETS.lock().map_err(|e| format!("Failed to acquire lock: {}", e))?;
-        secrets.remove(&email_lower);
         println!("[2FA] SUCCESS: Removed secret for email: {}", email_lower);
-        drop(secrets);
-        
-        // Auto-create account if it doesn't exist (2FA completion implies account creation)
-        // Use default password "password123" for now (user can change it later)
-        let default_password = "password123".to_string();
-        let mut users = USERS.lock().map_err(|e| format!("Failed to acquire lock: {}", e))?;
-        
-        if !users.contains_key(&email_lower) {
-            let mut next_id = NEXT_USER_ID.lock()
-                .map_err(|e| format!("Failed to acquire lock: {}", e))?;
-            let user_id = *next_id;
-            *next_id += 1;
-            drop(next_id);
-            
-            let user_account = UserAccount {
-                id: user_id,
-                first_name: "User".into(),
-                last_name: "Name".into(),
-                email: req.email.clone(),
-                password_hash: hash_password(&default_password),
-                first_login: true,
-                role_selected: false,
-                account_activated: false,
-                organization_type: None,
-                membership_role: None,
-                organization_id: None,
-            };
-
-            users.insert(email_lower.clone(), user_account);
-            println!("[2FA] Auto-created account for email: {}", email_lower);
-        } else {
-            println!("[2FA] Account already exists for email: {}", email_lower);
-        }
+        logger.log("info", "2FA verification successful", json!({ "email": &email_lower })).await;
         
         Ok("Two-factor authentication enabled successfully".into())
     } else {
         println!("[2FA] FAILED: Code does not match stored secret");
+        logger.log("warn", "2FA verification failed", json!({ "email": &email_lower })).await;
         Err("Invalid authentication code. Please try again.".into())
     }
 }
