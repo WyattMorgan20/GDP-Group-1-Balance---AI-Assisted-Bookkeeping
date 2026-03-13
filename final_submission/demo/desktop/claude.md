@@ -3,6 +3,46 @@
 ## Overview
 This document provides guidelines for integrating Claude AI into the Balancd AI-Assisted Bookkeeping system. The AI should assist with intelligent bookkeeping, month-end closes, and accounting process automation while maintaining security and accuracy.
 
+## Current Implementation Status (March 12, 2026)
+
+### ✅ Infrastructure Ready for AI Integration
+- **Audit Trail System**: Fully implemented in `audit_logs` table with metadata JSONB columns
+- **API Endpoints**: 17 commands ready (organizations, transactions, audit operations)
+- **Database Schema**: Supports document storage, transaction classification, variance flagging
+- **Multi-Tenant Isolation**: Each organization completely isolated with UUID primary keys
+- **Type System**: Comprehensive TypeScript types for all data structures
+
+### ❌ Not Yet Implemented
+- **UI Wired to Suggestions**: Components exist but don't call API endpoints yet
+- **Confidence Scoring**: Database ready (metadata JSONB) but no scoring logic
+- **AI Provider Integration**: Template structure ready, no actual provider calls
+- **Permission System**: Must complete before exposing AI features to users
+
+### 🔄 In Progress or Coming Next
+- **Permission/Access Control**: Current priority before UI wiring
+- **Page Routing & Navigation**: Needed before AI suggestion UI can connect
+- **Form Submission Handling**: Required for transaction entry with AI classification
+
+## Supported Transaction Types
+
+The system supports these account classifications (used for AI categorization):
+- **Assets**: Bank accounts, receivables, inventory, equipment
+- **Liabilities**: Payables, loans, credit cards
+- **Equity**: Owner contributions, retained earnings
+- **Income**: Revenue, refunds, gains
+- **Expenses**: COGS, operating expenses, depreciation
+
+Variance types for anomaly detection:
+- `DuplicateEntry`, `SuspiciousAmount`, `OutOfCategory`, `TimingIssue`, `UncategorizedTransaction`, `ManualReview`
+
+## Data Architecture for AI Integration
+
+### Database Foundation
+- **transactions table**: All financial records with account_type classification
+- **documents table**: Receipts, invoices, bank statements (ready for OCR/AI processing)
+- **audit_logs table**: Complete decision trail with metadata JSONB for AI reasoning
+- **variances table**: Flagged suspicious transactions for AI review
+
 ## AI Capabilities & Use Cases
 
 ### 1. **Intelligent Document Processing**
@@ -61,23 +101,43 @@ This document provides guidelines for integrating Claude AI into the Balancd AI-
 
 ## Integration Points
 
-### Frontend
-- Suggestion panels in transaction entry screens
-- AI-powered search and filtering
-- Interactive dashboard showing AI confidence scores
-- One-click approval/revision workflow
+### Frontend (Specific Integration Points)
 
-### Backend
-- AI service abstraction layer (support multiple AI providers)
-- Request/response logging and audit trail
-- Caching for frequently requested classifications
-- Rate limiting to prevent abuse
+**CompanyStructure Page** - Transaction Management
+- Transaction entry form where AI suggests account classification
+- Confidence score displayed next to suggestion
+- One-click accept/override workflow
+- Shows explanation: "Why did AI suggest this?"
+
+**Dashboard Page** - AI Insights
+- Anomaly alerts (unusual transactions or patterns)
+- Cash flow predictions/warnings
+- Month-end close checklist with AI suggestions
+- Variance summary with AI-flagged items
+
+**Transactions Page** (when created)
+- AI bulk classification for unclassified transactions
+- Duplicate detection and merging suggestions
+- Compliance alerts (out-of-range amounts, timing issues)
+
+**Audit Trail Page** - Decision Transparency
+- Shows AI reasoning for each automated decision
+- Links to source documents
+- User approval timestamps
+- Easy rollback if AI was wrong
+
+### Backend (Ready for Connection)
+- **AI Service Layer**: Create `services/ai_service.rs` following existing patterns
+- **Command Handlers**: Add new commands for AI operations (classify_transaction, flag_anomaly, etc.)
+- **Confidence Scoring**: Store in transaction metadata JSONB
+- **Request Logging**: Audit trail already captures all actions
+- **Rate Limiting**: Can be added to Tauri commands as needed
 
 ### Database
-- Store AI suggestions alongside transactions
-- Track human approvals and overrides
-- Maintain confidence scores and reasoning
-- Archive decision history for compliance
+- Store AI suggestions alongside transactions in metadata JSONB
+- Track human approvals and overrides in audit_logs
+- Maintain confidence scores and reasoning in audit entries
+- Archive decision history for compliance and model improvement
 
 ## Supported AI Providers
 
@@ -99,10 +159,36 @@ Switch between providers via environment variables. Users can choose based on:
 ## Error Handling
 
 When AI makes mistakes or confidence is low:
-1. Flag the suggestion with confidence score
-2. Provide alternative suggestions if available
-3. Allow easy rollback of AI-assisted entries
-4. Log all corrections for improvement
+1. Flag the suggestion with confidence score displayed to user
+2. Provide alternative suggestions (top 3 if available)
+3. Allow easy rollback - one click to revert to manual entry
+4. Log all corrections in audit trail for model improvement
+5. Never auto-post low-confidence items - always require approval
+
+## Audit Trail & AI Transparency
+
+Every AI decision is logged with full context in the audit_logs table:
+
+```json
+{
+  "entity_type": "transaction",
+  "action": "ai_classified",
+  "metadata": {
+    "ai_model": "claude-3-sonnet",
+    "confidence_score": 0.92,
+    "suggested_account": "Expense",
+    "alternatives": ["Asset", "Liability"],
+    "reasoning": "Matched against similar 100 transactions",
+    "source_data": ["tx-123", "tx-456"]
+  }
+}
+```
+
+This enables:
+- **Explainability**: Users see exactly why AI made a suggestion
+- **Compliance**: Complete audit trail for regulatory review
+- **Improvement**: Track which suggestions were accepted/rejected
+- **Rollback**: Revert AI decisions easily by referencing audit log
 
 ## Testing & Validation
 
@@ -121,10 +207,54 @@ Before deploying AI features:
 - Share learnings in team meetings
 - Plan weekly AI model updates and retraining
 
-## Next Steps
+## Implementation Roadmap
 
-1. Choose primary AI provider (recommend starting with Ollama for security)
-2. Define specific use cases to automate first
-3. Build feedback loop for continuous improvement
-4. Create user training materials
-5. Plan rollout strategy with client feedback
+### Phase 1: Foundation (Current - March 12-18)
+- [x] Database schema built
+- [x] Audit trail system implemented
+- [x] API endpoints created
+- [ ] Permission system (blocking further progress)
+- [ ] UI wired to API endpoints
+
+### Phase 2: AI Skeleton (March 18-25)
+1. **Choose primary AI provider**
+   - Recommend: Start with Ollama locally (security first, can switch to Claude API later)
+   - Model: Mistral 7B or Phi-2 (accounting-focused)
+   - Fallback: Claude API for complex decisions
+
+2. **Create AI service skeleton** (`services/ai_service.rs`)
+   ```rust
+   pub async fn classify_transaction(
+       description: &str,
+       amount: f64,
+       org_id: &str
+   ) -> Result<AIClassification, String> {
+       // Call AI provider
+       // Return { account_type, confidence, reasoning }
+   }
+   ```
+
+3. **Add AI commands**
+   - `classify_transaction` - Return suggested account type + confidence
+   - `flag_anomalies` - Review transactions for suspicious patterns
+   - `suggest_adjustments` - Accruals, deferrals, etc.
+
+### Phase 3: UI Integration (March 25-April 1)
+1. Wire CompanyStructure transaction form to `classify_transaction` command
+2. Display confidence score and reasoning
+3. Add approve/override workflow
+4. Show audit trail linking back to AI decision
+
+### Phase 4: Advanced Features (Post-Launch)
+1. Confidence scoring model tuning
+2. User feedback loop for continuous improvement
+3. Batch processing (classify multiple transactions at once)
+4. Month-end close automation
+5. Variance pattern detection
+
+### Phase 5: Deploy & Monitor
+1. Choose final AI provider based on performance
+2. Create user training materials
+3. Plan rollout with customer feedback
+4. Monitor accuracy metrics and collect improvement signals
+
