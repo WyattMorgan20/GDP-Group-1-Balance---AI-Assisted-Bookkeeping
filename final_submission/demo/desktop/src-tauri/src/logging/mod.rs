@@ -1,16 +1,21 @@
 use reqwest::Client;
 use serde_json::json;
+use std::sync::Arc;
 
-#[allow(dead_code)]
+#[derive(Clone)]
 pub struct SumoLogger {
-    client: Client,
+    client: Arc<Client>,
     endpoint: String,
 }
+
+// Explicitly mark as Send + Sync for Tauri state management
+unsafe impl Send for SumoLogger {}
+unsafe impl Sync for SumoLogger {}
 
 impl SumoLogger {
     pub fn new(http_source_url: &str) -> Self {
         Self {
-            client: Client::new(),
+            client: Arc::new(Client::new()),
             endpoint: http_source_url.to_string(),
         }
     }

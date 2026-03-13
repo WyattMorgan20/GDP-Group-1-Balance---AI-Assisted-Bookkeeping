@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use uuid::Uuid;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum OrganizationType {
@@ -14,7 +15,7 @@ pub enum MembershipRole {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UserAccount {
-    pub id: i32,
+    pub id: Uuid,
     pub first_name: String,
     pub last_name: String,
     pub email: String,
@@ -24,12 +25,12 @@ pub struct UserAccount {
     pub account_activated: bool,
     pub organization_type: Option<OrganizationType>,
     pub membership_role: Option<MembershipRole>,
-    pub organization_id: Option<i32>
+    pub organization_id: Option<Uuid>
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Organization {
-    pub id: i32,
+    pub id: Uuid,
     pub name: String,
     pub organization_type: OrganizationType,
     pub owner_email: String,
